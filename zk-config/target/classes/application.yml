@@ -1,0 +1,12 @@
+server:
+  port: 8001
+spring:
+  application:
+    name: zk-config
+zookeeper:
+    address: 192.168.153.128:2181,192.168.153.129:2181,192.168.153.130:2181
+    sessionTimeOut: 60000
+    connectionTimeoutMs: 15000
+    sleepMsBetweenRetry: 1000
+    maxRetries: 3
+
