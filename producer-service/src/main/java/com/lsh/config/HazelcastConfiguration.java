@@ -46,7 +46,7 @@ public class HazelcastConfiguration {
     public HazelcastInstance hazelcastInstance(Config config) {
         HazelcastInstance hzInstance = Hazelcast.newHazelcastInstance(config);
         //分布式map监听
-        IMap<Object, Object> imap = hzInstance.getMap("hazelcastMap");
+        IMap<Object, Object> imap = hzInstance.getMap("zk-cache");
         imap.addLocalEntryListener(new IMapListener());
         //拦截器（没写内容）
         imap.addInterceptor(new IMapInterceptor());
