@@ -1,5 +1,6 @@
 package com.lsh.interceptor;
 
+import com.alibaba.fastjson.JSONObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.lsh.utils.BeanUtils;
@@ -28,13 +29,17 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
         if ("".equals(username)|| username == null){
             System.out.println("username为空，不允许访问！");
             response.reset();
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED,"不允许访问");
-//            response.setCharacterEncoding("UTF-8");
-//            response.setContentType("application/json;charset=UTF-8");
-//            PrintWriter writer=response.getWriter();
-//            writer.println("没有权限访问");
-//            writer.flush();
-//            writer.close();
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setCharacterEncoding("UTF-8");
+            response.setContentType("application/json;charset=UTF-8");
+            JSONObject res = new JSONObject();
+            res.put( "code", "false");
+            res.put( "msg", "username为空，不允许访问！");
+            PrintWriter writer=response.getWriter();
+            writer.append(res.toString());
+//            writer.println(res.toString());
+            writer.flush();
+            writer.close();
             return false;
         }
 
@@ -50,12 +55,15 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
         System.out.println("没有权限访问");
         response.reset();
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setCharacterEncoding("UTF-8");
-            response.setContentType("application/json;charset=UTF-8");
-            PrintWriter writer=response.getWriter();
-            writer.println("没有权限访问");
-            writer.flush();
-            writer.close();
+        response.setCharacterEncoding("UTF-8");
+        response.setContentType("application/json;charset=UTF-8");
+        JSONObject res = new JSONObject();
+        res.put( "code", "false");
+        res.put( "msg", "没有权限访问！");
+        PrintWriter writer=response.getWriter();
+        writer.println(res.toString());
+        writer.flush();
+        writer.close();
         return false;
     }
 
