@@ -1,0 +1,22 @@
+server:
+  port: 7900
+spring:
+  application:
+    name: eureka-service
+eureka:
+  instance:
+    hostname: eureka-7900
+  client:
+    register-with-eureka: false   #是否将自己注册到eureka中
+    fetch-registry: false         #是否从eureka中获取信息
+    service-url:
+      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+    registry-fetch-interval-seconds: 20
+  server:
+    enable-self-preservation: false #Eureka自我保护机制 看服务的多少：服务很多建议开启；服务较少 则关闭
+    renewal-percent-threshold: 0.85 #自我保护阈值 ，默认为0.85
+    eviction-interval-timer-in-ms: 30000 # 剔除服务间隔（eureka server将长时间没有心跳的服务从注册表剔除）可以设置参数为1秒实现服务快速下线，单位：毫秒，默认60秒，
+    use-read-only-response-cache: false # 是否开启从readOnly读注册表
+    response-cache-update-interval-ms: 30000 #缓存同步时间（readONLYCache和readWriteCache同步时间间隔） 单位：毫秒，默认30秒，
+
+
