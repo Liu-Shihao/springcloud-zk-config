@@ -29,7 +29,7 @@
         </dependency>
         <dependency>
             <groupId>org.example</groupId>
-            <artifactId>auth-service</artifactId>
+            <artifactId>auth-util</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
         <!-- spring-boot-starter-web -->
