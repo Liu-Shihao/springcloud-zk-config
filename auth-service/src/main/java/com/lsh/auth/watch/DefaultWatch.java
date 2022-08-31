@@ -37,7 +37,6 @@ public class DefaultWatch implements Watcher {
                 break;
             case SyncConnected:
                 //如果收到了服务端的响应事件,连接成功
-//                log.info("=======Zookeeper连接成功!=======");
                 countDownLatch.countDown();
                 break;
             case AuthFailed:

@@ -8,15 +8,32 @@ package com.lsh.constant;
 public class ZKConstant {
 
 
-    public static final String RTP_SERVICE_PATH = "/real-time-payments";
+    public static final String ZK_GROUP_PATH = "/groups";
 
-    public static final String WIRE_TRANSFER_PATH = "/wire-transfer";
+    public static final String ZK_USER_PATH = "/users";
 
-    public static final String ROOT_PATH = "/auth-service";
+    public static final String ZK_ROLE_PATH = "/roles";
 
-    public static final String CACHE_MAP_USER = "hazelcast-user";
+    public static final String ZK_POLICY_PATH = "/policys";
 
-    public static final String CACHE_MAP_USER_KEY = "users";
+    public static final String ZK_API_PATH = "/apis";
 
-    public static final String LOCAL_CACHE_MAP_USER = "guava-user";
+    public static final String ZK_USER_GROUP_PATH = "/group";
+
+    public static final String ZK_USER_ROLE_PATH = "/role";
+
+    // Hazelcast 缓存信息
+    public static final String CACHE_KEY = "users_info";
+
+    public static final String HAZELCAST_MAP = "hazelcast-map";
+
+    // Guava 本地缓存信息
+    public static final String LOCAL_CACHE_KEY = "local_users";
+
+
+    public static final String ZK_USER_KEY_ROLES = "roles";
+
+    public static final String ZK_USER_KEY_GROUP = "groups";
+
+
 }

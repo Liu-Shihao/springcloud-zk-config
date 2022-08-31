@@ -1,7 +1,5 @@
 package com.lsh.utils.watch;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.lsh.constant.ZKConstant;
 import com.lsh.utils.config.GoogleGuava;
 import org.apache.zookeeper.AsyncCallback;
@@ -21,8 +19,6 @@ import java.util.concurrent.CountDownLatch;
  * DataCallback getData 获取数据异步回调
  */
 public class WatchCallBack implements Watcher, AsyncCallback.StatCallback, AsyncCallback.DataCallback {
-
-    HazelcastInstance hazelcastClient ;
 
     ZooKeeper zooKeeper;
 
@@ -56,7 +52,7 @@ public class WatchCallBack implements Watcher, AsyncCallback.StatCallback, Async
         if (data != null){
             //如果数据不为空，则拉去缓存，countDown -1
             String str = new String(data);
-            System.out.println("=======getData 回调："+str+"=======");
+            System.out.println("=======getData 回调：=======");
             //本地缓存
             countDownLatch.countDown();
         }else {
@@ -87,7 +83,7 @@ public class WatchCallBack implements Watcher, AsyncCallback.StatCallback, Async
     @Override
     public void process(WatchedEvent event) {
 //        System.out.println("WatchedEvent 回调："+event.getState());
-        IMap<String, Object> hazelcastCache = hazelcastClient.getMap(ZKConstant.CACHE_MAP_USER);
+//        IMap<String, Object> hazelcastCache = hazelcastClient.getMap(ZKConstant.CACHE_MAP_USER);
         switch (event.getType()) {
             case None:
                 break;
@@ -95,7 +91,7 @@ public class WatchCallBack implements Watcher, AsyncCallback.StatCallback, Async
                 System.out.println("=======WatchedEvent 回调：节点被创建=======");
 //                zooKeeper.getData(event.getPath(),this,this,null);
                 //从Hazelcast中把数据拉取到本地缓存
-                GoogleGuava.localCache.put(ZKConstant.CACHE_MAP_USER_KEY,hazelcastCache.get(ZKConstant.CACHE_MAP_USER_KEY));
+                GoogleGuava.localCache.put(ZKConstant.LOCAL_CACHE_KEY,null);
 
                 break;
             case NodeDeleted:
@@ -107,7 +103,7 @@ public class WatchCallBack implements Watcher, AsyncCallback.StatCallback, Async
                 break;
             case NodeDataChanged:
                 System.out.println("=======WatchedEvent 回调：节点数据被更改，更新本地缓存=======");
-                GoogleGuava.localCache.put(ZKConstant.CACHE_MAP_USER_KEY,hazelcastCache.get(ZKConstant.CACHE_MAP_USER_KEY));
+                GoogleGuava.localCache.put(ZKConstant.LOCAL_CACHE_KEY,null);
                 break;
             case NodeChildrenChanged:
                 break;

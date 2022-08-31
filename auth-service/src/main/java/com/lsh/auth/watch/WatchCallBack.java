@@ -1,6 +1,5 @@
 package com.lsh.auth.watch;
 
-import com.lsh.constant.ZKConstant;
 import lombok.Data;
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
@@ -16,7 +15,7 @@ import org.springframework.stereotype.Component;
  */
 @Data
 @Component
-public class WatchCallBack implements Watcher, AsyncCallback.StatCallback {
+public class WatchCallBack implements Watcher, AsyncCallback.StatCallback, AsyncCallback.DataCallback {
 
 
     ZooKeeper zooKeeper;
@@ -50,7 +49,7 @@ public class WatchCallBack implements Watcher, AsyncCallback.StatCallback {
                 zooKeeper.setData(path,"{version:1}".getBytes(),stat.getVersion());
             }else {
                 System.out.println("======="+path+" 节点不存在,创建节点=======");
-                zooKeeper.create(ZKConstant.ROOT_PATH, "{version:1}".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                zooKeeper.create(path, "".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             }
         }catch (Exception e){
             e.printStackTrace();
@@ -85,4 +84,20 @@ public class WatchCallBack implements Watcher, AsyncCallback.StatCallback {
 
     }
 
+    @Override
+    public void processResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
+        if (data != null){
+            //如果数据不为空，则拉去缓存，countDown -1
+            String str = new String(data);
+            System.out.println("=======getData 回调："+str+"=======");
+            //本地缓存
+//            IMap<String, Object> zkCache = hazelcastInstance.getMap("zk-cache");
+            //api : users
+//            zkCache.put("test",str);
+//            countDownLatch.countDown();
+        }else {
+            //数据为空，countDown继续阻塞，如果节点有数据写入，发生NodeDataChanged事件，触发watch回调方法（方法3）
+            System.out.println("=======getData 回调 :没有数据=======");
+        }
+    }
 }

@@ -1,7 +1,6 @@
 package com.lsh.utils.interceptor;
 
 import com.alibaba.fastjson.JSONObject;
-import com.lsh.constant.ZKConstant;
 import com.lsh.utils.config.GoogleGuava;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
@@ -38,8 +37,8 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
             writer.close();
             return false;
         }
-
-        if (GoogleGuava.localCache.get(ZKConstant.CACHE_MAP_USER_KEY).toString().contains(username)){
+        String requestURI = request.getRequestURI();
+        if (GoogleGuava.localCache.get(username).toString().contains(requestURI)){
             System.out.println("允许访问");
             return true;
         }

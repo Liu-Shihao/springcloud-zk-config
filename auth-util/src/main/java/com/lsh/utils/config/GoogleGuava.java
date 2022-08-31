@@ -4,6 +4,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.hazelcast.core.HazelcastInstance;
+import org.apache.zookeeper.ZooKeeper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 
@@ -20,9 +21,12 @@ public class GoogleGuava {
     @Autowired
     HazelcastInstance hazelcastClient;
 
+    @Autowired
+    ZooKeeper zkClient;
+
     public static LoadingCache<String, Object> localCache = CacheBuilder.newBuilder()
             .initialCapacity(10)    //设置缓存初始大小
-            .maximumSize(100)       //设置最大容量
+            .maximumSize(10000)       //设置最大容量
             .concurrencyLevel(5)    //并发数设置
             .expireAfterWrite(300, TimeUnit.SECONDS) //缓存过期时间    5分钟
             .expireAfterAccess(60,TimeUnit.SECONDS) // 此缓存对象经过多少秒没有被访问则过期。
