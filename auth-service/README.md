@@ -1,24 +1,13 @@
 #auth-service
-# 环境
-
-zk:
-hazelcast:
 
 
-## 启动auth-service服务
-1. 连接zk
-
-#auth-util 
-1. 连接zk，获取数据，写入本地缓存
-2. 让其他服务引用，interceptor拦截器进行鉴权
+1. 连接zk集群
+2. guava 建立本地缓存，本地缓存中没查到，会从zk中重新加载
+3. zk数据变化，清空本地缓存
+4. 提供API鉴权
 
 
 
-#DB
-user 
+# gateway-service
 
-group 
-
-role
-
-policy
+1. 定义GlobalFilter，请求auth-service鉴权API

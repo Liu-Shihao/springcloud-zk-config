@@ -19,6 +19,9 @@ import java.util.concurrent.CountDownLatch;
 public class ZookeeperConfig {
 
     @Autowired
+    MyWatch myWatch;
+
+    @Autowired
     ZookeeperProperties zookeeperProperties;
 
     @Bean("zkClient")
@@ -28,7 +31,7 @@ public class ZookeeperConfig {
         zooKeeper = new ZooKeeper(zookeeperProperties.getAddress(),zookeeperProperties.getSessionTimeOut() , new DefaultWatch(countDownLatch,zooKeeper));
         countDownLatch.await();//等待zk客户端连接
         log.info("==========Zookeeper连接成功!==========");
-        //TODO
+
         return zooKeeper;
     }
 

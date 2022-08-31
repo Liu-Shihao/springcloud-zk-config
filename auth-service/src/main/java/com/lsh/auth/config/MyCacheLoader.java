@@ -25,17 +25,19 @@ public class MyCacheLoader extends CacheLoader<String, Set<String>> {
     @Autowired
     ZooKeeper zkClient;
 
+    @Autowired
+    MyWatch myWatch;
+
     @Override
     public Set<String> load(String path) throws Exception {
         //若数据存在则直接返回；若数据不存在，则根据ClassLoader的load方法加载数据至内存，然后返回该数据
         System.out.println("本地缓存没有数据，从zk加载...");
-
         //判断是否存在该用户节点
-        Stat exists = zkClient.exists(ZKConstant.ZK_USER_PATH + "/" + path, true);
+        Stat exists = zkClient.exists(ZKConstant.ZK_USER_PATH + "/" + path, myWatch);
         if (exists != null){
             Stat stat = new Stat();
             //获得用户的 roles 和 groups 信息
-            byte[] data = zkClient.getData(ZKConstant.ZK_USER_PATH + "/" + path, true, stat);
+            byte[] data = zkClient.getData(ZKConstant.ZK_USER_PATH + "/" + path, myWatch, stat);
             String s = new String(data);
             log.info("{} 该用户数据：{}",path,s);
             JSONObject jsonObject = JSONObject.parseObject(s);
@@ -48,14 +50,14 @@ public class MyCacheLoader extends CacheLoader<String, Set<String>> {
             //获得user的 roles 的policy信息
             for (String role : roleArr) {
                 Stat stat1 = new Stat();
-                byte[] data1 = zkClient.getData(ZKConstant.ZK_ROLE_PATH + "/" + role, true, stat1);
+                byte[] data1 = zkClient.getData(ZKConstant.ZK_ROLE_PATH + "/" + role, myWatch, stat1);
                 List<String> policy1 = JSONObject.parseArray(new String(data1), String.class);
                 policysSet.addAll(policy1);
             }
             //获得user的 policy 的policy信息
             for (String group : groupArr) {
                 Stat stat1 = new Stat();
-                byte[] data1 = zkClient.getData(ZKConstant.ZK_GROUP_PATH + "/" + group, true, stat1);
+                byte[] data1 = zkClient.getData(ZKConstant.ZK_GROUP_PATH + "/" + group, myWatch, stat1);
                 List<String> policy2 = JSONObject.parseArray(new String(data1), String.class);
                 policysSet.addAll(policy2);
             }
@@ -64,7 +66,7 @@ public class MyCacheLoader extends CacheLoader<String, Set<String>> {
             //查询所有policys的apis
             for (String  policy: policysSet) {
                 Stat stat1 = new Stat();
-                byte[] data1 = zkClient.getData(ZKConstant.ZK_POLICY_PATH + "/" + policy, true, stat1);
+                byte[] data1 = zkClient.getData(ZKConstant.ZK_POLICY_PATH + "/" + policy, myWatch, stat1);
                 List<String> apis = JSONObject.parseArray(new String(data1), String.class);
                 apiSet.addAll(apis);
             }

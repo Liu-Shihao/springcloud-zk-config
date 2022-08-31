@@ -1,6 +1,7 @@
 package com.lsh.auth.controller;
 
 import com.alibaba.fastjson.JSONObject;
+import com.lsh.auth.config.MyWatch;
 import com.lsh.auth.dto.ZkNode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.CreateMode;
@@ -28,6 +29,9 @@ public class ZKController {
 
     @Autowired
     ZooKeeper zkClient;
+
+    @Autowired
+    MyWatch myWatch;
 
     /**
      * EPHEMERAL 临时节点
@@ -79,6 +83,7 @@ public class ZKController {
         String jsonString = JSONObject.toJSONString(data);
         log.info("data :{}",jsonString);
         Stat stat = new Stat();
+        zkClient.getData(node.getPath(), myWatch, stat);
         zkClient.setData(node.getPath(),jsonString.getBytes(),stat.getVersion());
         return "success";
     }
