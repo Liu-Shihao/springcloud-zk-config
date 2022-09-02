@@ -30,6 +30,7 @@ public class MyCacheLoader extends CacheLoader<String, Set<String>> {
 
     @Override
     public Set<String> load(String path) throws Exception {
+        HashSet<String> ans = new HashSet<>();
         //若数据存在则直接返回；若数据不存在，则根据ClassLoader的load方法加载数据至内存，然后返回该数据
         System.out.println("本地缓存没有数据，从zk加载...");
         //判断是否存在该用户节点
@@ -62,18 +63,17 @@ public class MyCacheLoader extends CacheLoader<String, Set<String>> {
                 policysSet.addAll(policy2);
             }
 
-            HashSet<String> apiSet = new HashSet<>();
             //查询所有policys的apis
             for (String  policy: policysSet) {
                 Stat stat1 = new Stat();
                 byte[] data1 = zkClient.getData(ZKConstant.ZK_POLICY_PATH + "/" + policy, myWatch, stat1);
                 List<String> apis = JSONObject.parseArray(new String(data1), String.class);
-                apiSet.addAll(apis);
+                ans.addAll(apis);
             }
-            log.info("{}:{}",path,apiSet);
-            return apiSet;
+            log.info("{}:{}",path,ans);
         }
         log.info("{} 该用户zk节点中不存在...");
-        return new HashSet<>();
+
+        return ans;
     }
 }

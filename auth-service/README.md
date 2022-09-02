@@ -11,3 +11,5 @@
 # gateway-service
 
 1. 定义GlobalFilter，请求auth-service鉴权API
+
+http://localhost:8000/api1?userId=SL001&businessCode=Real-Time-Payments
