@@ -9,13 +9,11 @@ import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * @Author: LiuShihao
@@ -86,6 +84,22 @@ public class ZKController {
         zkClient.getData(node.getPath(), myWatch, stat);
         zkClient.setData(node.getPath(),jsonString.getBytes(),stat.getVersion());
         return "success";
+    }
+
+    @GetMapping("/t")
+    public String t(){
+        try {
+            UUID uuid = UUID.randomUUID();
+            long start = System.currentTimeMillis();
+            String s = zkClient.create("/" + uuid, uuid.toString().getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+//            zkClient.getData("/5b5811cc-d8ad-4b7c-b3b0-d264981390fc",true,new Stat());
+            long end = System.currentTimeMillis();
+            System.out.println((end-start));
+            return (end-start)+"ms";
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return ""+-1;
     }
 
 
