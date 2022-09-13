@@ -147,5 +147,26 @@ public class ZKTest {
     }
 
 
+//    public static void read() throws IOException, InterruptedException {
+//        File file = new File("download/Ecr Report.csv");
+//        String filePath = file.getAbsolutePath();
+//        String content = "permissionservice";
+//
+//        CsvReader csvReader = new CsvReader(filePath);
+//        while (csvReader.readRecord()){
+//            try {
+//                //check ECR report content
+//                System.out.println(csvReader.readRecord());
+//                Assert.assertTrue(csvReader.getRawRecord().contains(content), "The ECR report content is not correct.");
+//
+//            }catch (AssertionError e){
+//            }
+//        }
+//        csvReader.close();
+//        //delete the downloaded ECR report
+//        file.delete();
+//    }
+
+
 
 }

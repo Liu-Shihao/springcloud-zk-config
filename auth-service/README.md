@@ -1,3 +1,24 @@
+api节点:  ["/policy1","/policy2","/policy3"]
+policy节点:  "apis":["/api1","api3"],
+
+1. 创建api：如果policy不存在，从数组中删除此policy，并更新对应的policy
+2. 创建policy：检查api是否存在，不存在禁止创建；存在则更新相应的api节点数据
+更新api：如果policy不存在，直接跳过，更新对应policy节点
+更新policy：检查api是否存在，更新相应的api节点数据
+
+
+
+
+
+1. create api node：don't check policy is exists
+2. 
+
+
+
+
+
+
+
 #auth-service
 
 

@@ -33,8 +33,6 @@ public class CuratorConfig {
                 .connectionTimeoutMs(5000) //连接超时时间
                 .sessionTimeoutMs(3000)//会话超时时间
                 .retryPolicy(retryPolicy)//设置重试机制
-                //设置命名空间 在操作节点的时候，会以这个为父节点
-//                .namespace("/")
                 .build();
         client.start();
         //注册监听器

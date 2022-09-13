@@ -1,8 +1,11 @@
 package com.lsh.auth.dto;
 
+import com.lsh.auth.dto.zk.PolicyNode;
+import com.lsh.auth.dto.zk.UserNode;
 import lombok.Data;
 
-import java.util.Arrays;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import java.util.List;
 
 /**
@@ -13,44 +16,18 @@ import java.util.List;
 @Data
 public class ZkNode {
 
+    @NotNull(message = "path param not null")
     public String path;
 
+    @Pattern(regexp = "^user|api|group|role|policy$",message = "type param illegal")
+    @NotNull(message = "type param not null")
     public String type;
 
-    //创建 group节点、role节点、policy节点传递节点值
-    public List<String> arrays;
+    public UserNode userNode;
 
-    //创建user时传递使用
-    public List<String> roles;
+    // role/group/api
+    public List<String> policys;
 
-    //创建user时传递使用
-    public List<String> groups;
-
-
-    public List<String> types = Arrays.asList("group","role","policy");
-
-    enum NodeType{
-        GROUP("group"),
-        ROLE("role"),
-        USER("user"),
-        POLICY("policy");
-
-        public String value;
-
-        NodeType(String value) {
-            this.value = value;
-        }
-
-        public String getValue() {
-            return value;
-        }
-
-        public void setValue(String value) {
-            this.value = value;
-        }
-    }
-
-
-
+    public PolicyNode policyNode;
 
 }
