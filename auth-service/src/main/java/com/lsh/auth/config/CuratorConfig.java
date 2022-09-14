@@ -1,5 +1,6 @@
 package com.lsh.auth.config;
 
+import com.lsh.auth.watch.ZookeeperWatches;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
@@ -36,9 +37,9 @@ public class CuratorConfig {
                 .build();
         client.start();
         //注册监听器
-//        ZookeeperWatches watches = new ZookeeperWatches(client);
-//        watches.znodeWatcher();
-//        watches.znodeChildrenWatcher();
+        ZookeeperWatches watches = new ZookeeperWatches(client);
+        watches.znodeWatcher();
+        watches.znodeChildrenWatcher();
         return client;
     }
 

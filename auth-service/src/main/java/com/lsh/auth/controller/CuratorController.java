@@ -13,15 +13,9 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * @Author: LiuShihao
@@ -71,13 +65,25 @@ public class CuratorController {
     public String createNode(@RequestBody @Validated ZkNode node) throws Exception {
         String path = node.getPath();
         String data ;
-
         switch (node.getType()){
             case "user":
                 if (!path.startsWith(ZKConstant.ZK_USER_PATH)){
                     path = ZKConstant.ZK_USER_PATH+path;
                 }
                 UserNode userNode = node.getUserNode();
+                //1. check path isExists?
+                for (String group : userNode.getGroups()) {
+                    if (!checkExists(ZKConstant.ZK_GROUP_PATH+group)){
+                        log.info("{} not exist！",ZKConstant.ZK_GROUP_PATH + group);
+                        return ZKConstant.ZK_GROUP_PATH + group+" not exist！";
+                    }
+                }
+                for (String role : userNode.getRoles()) {
+                    if (!checkExists(ZKConstant.ZK_ROLE_PATH+role)){
+                        log.info("{} not exist！",ZKConstant.ZK_ROLE_PATH+role);
+                        return ZKConstant.ZK_ROLE_PATH + role+" not exist！";
+                    }
+                }
                 data = JSON.toJSONString(userNode);
                 break;
             case "policy":
@@ -107,11 +113,27 @@ public class CuratorController {
                 if (!path.startsWith(ZKConstant.ZK_GROUP_PATH)){
                     path = ZKConstant.ZK_GROUP_PATH+path;
                 }
+                if (node.getPolicys() != null){
+                    for (String policy : node.getPolicys()) {
+                        if (!checkExists(ZKConstant.ZK_POLICY_PATH + policy)){
+                            log.info("{} notexist！",ZKConstant.ZK_POLICY_PATH + policy);
+                            return ZKConstant.ZK_POLICY_PATH + policy+" not exist！";
+                        }
+                    }
+                }
                 data = JSON.toJSONString(node.getPolicys());
                 break;
             case "role":
                 if (!path.startsWith(ZKConstant.ZK_ROLE_PATH)){
                     path = ZKConstant.ZK_ROLE_PATH+path;
+                }
+                if (node.getPolicys() != null){
+                    for (String policy : node.getPolicys()) {
+                        if (!checkExists(ZKConstant.ZK_POLICY_PATH + policy)){
+                            log.info("{} notexist！",ZKConstant.ZK_POLICY_PATH + policy);
+                            return ZKConstant.ZK_POLICY_PATH + policy+" not exist！";
+                        }
+                    }
                 }
                 data = JSON.toJSONString(node.getPolicys());
                 break;
@@ -306,7 +328,7 @@ public class CuratorController {
 
 
     @PostMapping("/deleteNode")
-    public String deleteNode(@RequestBody   ZkNode node) throws Exception {
+    public String deleteNode(@RequestBody ZkNode node) throws Exception {
         switch (node.getType()){
             case "user":
                 curatorClient.delete().forPath(ZKConstant.ZK_USER_PATH+node.getPath());
@@ -347,6 +369,132 @@ public class CuratorController {
         }
         return "success";
     }
+
+
+
+    @PostMapping("/select/group/{groupId}")
+    public HashMap selectGroup(@PathVariable("groupId") String groupId) throws Exception {
+        HashMap<String, Object> result = new HashMap<>();
+        byte[] bytes = curatorClient.getData().forPath(ZKConstant.ZK_GROUP_PATH + "/" + groupId);
+        List<String> policys = JSONObject.parseArray(new String(bytes), String.class);
+        List<String> users = curatorClient.getChildren().forPath(ZKConstant.ZK_USER_PATH);
+        ArrayList<String> groupUsers = new ArrayList<>();
+        for (String user : users) {
+            String path = ZKConstant.ZK_USER_PATH+"/"+user;
+            byte[] bytes1 = curatorClient.getData().forPath(path);
+            UserNode userNode = JSON.parseObject(new String(bytes1), UserNode.class);
+            if (userNode.getGroups().contains("/"+groupId)){
+                groupUsers.add(user);
+            }
+        }
+        result.put("groupId",groupId);
+        result.put("policys",policys);
+        result.put("users",groupUsers);
+        return result;
+
+    }
+    @PostMapping("/select/role/{roleId}")
+    public HashMap selectRole(@PathVariable("roleId") String roleId) throws Exception {
+        HashMap<String, Object> result = new HashMap<>();
+        byte[] bytes = curatorClient.getData().forPath(ZKConstant.ZK_ROLE_PATH + "/" + roleId);
+        List<String> policys = JSONObject.parseArray(new String(bytes), String.class);
+        List<String> users = curatorClient.getChildren().forPath(ZKConstant.ZK_USER_PATH);
+        ArrayList<String> groupUsers = new ArrayList<>();
+        for (String user : users) {
+            String path = ZKConstant.ZK_USER_PATH+"/"+user;
+            byte[] bytes1 = curatorClient.getData().forPath(path);
+            UserNode userNode = JSON.parseObject(new String(bytes1), UserNode.class);
+            if (userNode.getRoles().contains("/"+roleId)){
+                groupUsers.add(user);
+            }
+        }
+        result.put("roleId",roleId);
+        result.put("policys",policys);
+        result.put("users",groupUsers);
+        return result;
+
+    }
+
+
+
+
+
+    @PostMapping("/select/user/{userId}")
+    public HashMap selectUser(@PathVariable("userId") String userId) throws Exception {
+        HashMap<String, Object> result = new HashMap<>();
+        byte[] bytes = curatorClient.getData().forPath(ZKConstant.ZK_USER_PATH + "/" + userId);
+        UserNode userNode = JSONObject.parseObject(new String(bytes), UserNode.class);
+        ArrayList<String> groups = userNode.getGroups();
+        ArrayList<String> roles = userNode.getRoles();
+
+        HashSet<String> userPolicy = new HashSet<>();
+
+        HashSet<String> userApi = new HashSet<>();
+
+        for (String group : groups) {
+            byte[] bytes2 = curatorClient.getData().forPath(ZKConstant.ZK_GROUP_PATH +  group);
+            List<String> groupPolicy = JSONObject.parseArray(new String(bytes2), String.class);
+            userPolicy.addAll(groupPolicy);
+        }
+        for (String role : roles) {
+            byte[] bytes3 = curatorClient.getData().forPath(ZKConstant.ZK_ROLE_PATH +  role);
+            List<String> rolePolicy = JSONObject.parseArray(new String(bytes3), String.class);
+            userPolicy.addAll(rolePolicy);
+        }
+
+        for (String policy : userPolicy) {
+            byte[] bytes3 = curatorClient.getData().forPath(ZKConstant.ZK_POLICY_PATH +  policy);
+            PolicyNode policyNode = JSONObject.parseObject(new String(bytes3), PolicyNode.class);
+            ArrayList<String> apis = policyNode.getApis();
+            userApi.addAll(apis);
+        }
+
+        result.put("userId",userId);
+        result.put("groups",groups);
+        result.put("roles",roles);
+        result.put("policys",userPolicy);
+        result.put("apis",userApi);
+        return result;
+    }
+
+
+    @PostMapping("/getData")
+    public String getData(@RequestBody ZkNode node) throws Exception {
+        String path = node.getPath();
+        switch (node.getType()){
+            case "user":
+                if (!path.startsWith(ZKConstant.ZK_USER_PATH)){
+                    path = ZKConstant.ZK_USER_PATH+path;
+                }
+                break;
+            case "role":
+                if (!path.startsWith(ZKConstant.ZK_ROLE_PATH)){
+                    path = ZKConstant.ZK_ROLE_PATH+path;
+                }
+                break;
+            case "group":
+                if (!path.startsWith(ZKConstant.ZK_GROUP_PATH)){
+                    path = ZKConstant.ZK_GROUP_PATH+path;
+                }
+                break;
+            case "policy":
+                if (!path.startsWith(ZKConstant.ZK_POLICY_PATH)){
+                    path = ZKConstant.ZK_POLICY_PATH+path;
+                }
+                break;
+            case "api":
+                if (!path.startsWith(ZKConstant.ZK_API_PATH)){
+                    path = ZKConstant.ZK_API_PATH+path;
+                }
+                break;
+            default:
+                break;
+        }
+        byte[] bytes = curatorClient.getData().forPath(path);
+        return new String(bytes);
+    }
+
+
 
     public boolean checkExists(String path){
         boolean bool = true;

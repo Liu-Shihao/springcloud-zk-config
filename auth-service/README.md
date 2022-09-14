@@ -1,11 +1,4 @@
-api节点:  ["/policy1","/policy2","/policy3"]
-policy节点:  "apis":["/api1","api3"],
-
-1. 创建api：如果policy不存在，从数组中删除此policy，并更新对应的policy
-2. 创建policy：检查api是否存在，不存在禁止创建；存在则更新相应的api节点数据
-更新api：如果policy不存在，直接跳过，更新对应policy节点
-更新policy：检查api是否存在，更新相应的api节点数据
-
+目前Curator有2.x.x和3.x.x两个系列的版本，支持不同版本的Zookeeper。其中Curator 2.x.x兼容Zookeeper的3.4.x和3.5.x。而Curator 3.x.x只兼容Zookeeper 3.5.x，并且提供了一些诸如动态重新配置、watch删除等新特性。
 
 
 
