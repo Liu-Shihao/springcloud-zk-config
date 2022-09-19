@@ -1,20 +1,29 @@
 package com.lsh.auth.watch;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.*;
 import org.apache.zookeeper.data.Stat;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * @Author: LiuShihao
- * @Date: 2022/8/19 11:26
- * @Desc:
- */
+@Component
 @Slf4j
 public class ZookeeperWatches {
+
+    @Autowired
+    Config hazelCastConfig;
+
+    HazelcastInstance hzInstance = Hazelcast.newHazelcastInstance(hazelCastConfig);
+
+    IMap<String, Object> localCache = hzInstance.getMap("hazelcast-cache");
 
     private CuratorFramework client;
 
@@ -26,6 +35,7 @@ public class ZookeeperWatches {
 
 
     public void znodeWatcher() throws Exception {
+
         for (String path : nodes) {
             NodeCache nodeCache = new NodeCache(client, path);
             nodeCache.start();
@@ -34,11 +44,9 @@ public class ZookeeperWatches {
                 @Override
                 public void nodeChanged() throws Exception {
                     log.info("=======节点改变===========");
-                    String currentDataPath = nodeCache.getCurrentData().getPath();
                     String currentData = new String(nodeCache.getCurrentData().getData());
                     nodeCache.getCurrentData().getStat();
                     log.info("path:"+path);
-                    log.info("currentDataPath:"+currentDataPath);
                     log.info("currentData:"+currentData);
                 }
             });
