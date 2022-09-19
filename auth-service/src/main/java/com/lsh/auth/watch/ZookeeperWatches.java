@@ -1,5 +1,6 @@
 package com.lsh.auth.watch;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.*;
 import org.apache.zookeeper.data.Stat;
@@ -12,6 +13,7 @@ import java.util.List;
  * @Date: 2022/8/19 11:26
  * @Desc:
  */
+@Slf4j
 public class ZookeeperWatches {
 
     private CuratorFramework client;
@@ -31,19 +33,18 @@ public class ZookeeperWatches {
 
                 @Override
                 public void nodeChanged() throws Exception {
-                    System.out.println("=======节点改变===========");
-                    String path = "/";
+                    log.info("=======节点改变===========");
                     String currentDataPath = nodeCache.getCurrentData().getPath();
                     String currentData = new String(nodeCache.getCurrentData().getData());
-                    Stat stat = nodeCache.getCurrentData().getStat();
-                    System.out.println("path:"+path);
-                    System.out.println("currentDataPath:"+currentDataPath);
-                    System.out.println("currentData:"+currentData);
+                    nodeCache.getCurrentData().getStat();
+                    log.info("path:"+path);
+                    log.info("currentDataPath:"+currentDataPath);
+                    log.info("currentData:"+currentData);
                 }
             });
 
         }
-        System.out.println("节点监听注册完成");
+        log.info("节点监听注册完成");
     }
 
     public void znodeChildrenWatcher() throws Exception {
@@ -54,22 +55,22 @@ public class ZookeeperWatches {
 
                 @Override
                 public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception {
-                    System.out.println("=======节点子节点改变===========");
+                    log.info("=======节点子节点改变===========");
                     PathChildrenCacheEvent.Type type = event.getType();
                     String childrenData = new String(event.getData().getData());
                     String childrenPath = event.getData().getPath();
                     Stat childrenStat = event.getData().getStat();
 
-                    System.out.println("子节点监听类型："+type);
-                    System.out.println("子节点路径："+childrenPath);
-                    System.out.println("子节点数据："+childrenData);
-                    System.out.println("子节点元数据："+childrenStat);
+                    log.info("子节点监听类型："+type);
+                    log.info("子节点路径："+childrenPath);
+                    log.info("子节点数据："+childrenData);
+                    log.info("子节点元数据："+childrenStat);
 
                 }
             });
         }
 
 
-        System.out.println("子节点监听注册完成");
+        log.info("子节点监听注册完成");
     }
 }
