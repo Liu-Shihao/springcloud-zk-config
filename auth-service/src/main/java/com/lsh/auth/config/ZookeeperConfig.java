@@ -30,7 +30,7 @@ public class ZookeeperConfig {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         zooKeeper = new ZooKeeper(zookeeperProperties.getAddress(),zookeeperProperties.getSessionTimeOut() , new DefaultWatch(countDownLatch,zooKeeper));
         countDownLatch.await();//等待zk客户端连接
-        log.info("==========Zookeeper连接成功!==========");
+        log.info("==========Zookeeper Connection Success !==========");
 
         return zooKeeper;
     }

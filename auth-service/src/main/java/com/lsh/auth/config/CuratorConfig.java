@@ -5,7 +5,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.lsh.auth.dto.zk.GroupNode;
 import com.lsh.auth.dto.zk.PolicyNode;
+import com.lsh.auth.dto.zk.RoleNode;
 import com.lsh.auth.dto.zk.UserNode;
 import com.lsh.auth.watch.ZookeeperWatches;
 import com.lsh.constant.ZKConstant;
@@ -21,6 +23,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -68,18 +71,18 @@ public class CuratorConfig {
             ArrayList<String> policys = new ArrayList<>();
             for (String userGroup : userGroups) {
                 byte[] bytes2 = client.getData().forPath(ZKConstant.ZK_GROUP_PATH+userGroup);
-                List<String> groupPolicy = JSONObject.parseArray(new String(bytes2), String.class);
-                policys.addAll(groupPolicy);
+                GroupNode groupNode = JSONObject.parseObject(new String(bytes2), GroupNode.class);
+                policys.addAll(groupNode.getPolicys());
             }
 
             ArrayList<String> userRoles = userNode.getRoles();
             for (String userRole : userRoles) {
                 byte[] bytes3 = client.getData().forPath(ZKConstant.ZK_ROLE_PATH+ userRole);
-                List<String> rolesPolicy = JSONObject.parseArray(new String(bytes3), String.class);
-                policys.addAll(rolesPolicy);
+                RoleNode roleNode = JSONObject.parseObject(new String(bytes3), RoleNode.class);
+                policys.addAll(roleNode.getPolicys());
             }
 
-            ArrayList<String> apis = new ArrayList<>();
+            HashSet<String> apis = new HashSet<>();
             for (String policy : policys) {
                 byte[] bytes4 = client.getData().forPath(ZKConstant.ZK_POLICY_PATH+policy);
                 PolicyNode policyNode = JSONObject.parseObject(new String(bytes4), PolicyNode.class);

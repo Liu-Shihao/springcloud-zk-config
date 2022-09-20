@@ -68,7 +68,6 @@ public class ZookeeperWatches {
                     String childrenData = new String(event.getData().getData());
                     String childrenPath = event.getData().getPath();
                     Stat childrenStat = event.getData().getStat();
-
                     log.info("子节点监听类型："+type);
                     log.info("子节点路径："+childrenPath);
                     log.info("子节点数据："+childrenData);
