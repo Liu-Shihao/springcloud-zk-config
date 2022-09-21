@@ -613,12 +613,11 @@ public class CuratorController {
                     return ZKConstant.ZK_USER_PATH + user+" not exist！";
                 }
             }
-
+            // 3. get old data
             byte[] bytes = curatorClient.getData().forPath(ZKConstant.ZK_GROUP_PATH+path);
             GroupNode groupNode = JSONObject.parseObject(new String(bytes), GroupNode.class);
 
-
-
+            // 4. update policy data
             List<String> old_RolePolicys = groupNode.getPolicys();
             List<String> new_RolePolicys = node.getPolicys();
             ArrayList<String> copy_oldRolePolicys = new ArrayList<>(Arrays.asList(new String[old_RolePolicys.size()]));
@@ -681,8 +680,29 @@ public class CuratorController {
     @ApiOperation("Delete User")
     @DeleteMapping("/deleteUser")
     public String deleteUser(@RequestBody ZkNode node){
+        String path = node.getPath();
         try {
-            curatorClient.delete().forPath(ZKConstant.ZK_USER_PATH+node.getPath());
+            // 1. get old data
+            byte[] bytes1 = curatorClient.getData().forPath(ZKConstant.ZK_USER_PATH+path);
+            UserNode userNode = JSONObject.parseObject(new String(bytes1), UserNode.class);
+            // 2. remove this user from group date
+            ArrayList<String> userNodeGroups = userNode.getGroups();
+            for (String userNodeGroup : userNodeGroups) {
+                byte[] bytes2 = curatorClient.getData().forPath(ZKConstant.ZK_GROUP_PATH+userNodeGroup);
+                GroupNode groupNode = JSONObject.parseObject(new String(bytes2), GroupNode.class);
+                groupNode.getUsers().remove(path);
+                curatorClient.setData().forPath(ZKConstant.ZK_GROUP_PATH+userNodeGroup,JSONObject.toJSONString(groupNode).getBytes());
+            }
+            // 3. remove this user from role date
+            ArrayList<String> userNodeRoles = userNode.getRoles();
+            for (String userNodeRole : userNodeRoles) {
+                byte[] bytes2 = curatorClient.getData().forPath(ZKConstant.ZK_ROLE_PATH+userNodeRole);
+                RoleNode roleNode = JSONObject.parseObject(new String(bytes2), RoleNode.class);
+                roleNode.getUsers().remove(path);
+                curatorClient.setData().forPath(ZKConstant.ZK_ROLE_PATH+userNodeRole,JSONObject.toJSONString(roleNode).getBytes());
+            }
+            // 4. delete this user path
+            curatorClient.delete().forPath(ZKConstant.ZK_USER_PATH+path);
         }catch (Exception e){
             e.printStackTrace();
             return e.getMessage();
@@ -693,16 +713,34 @@ public class CuratorController {
     @ApiOperation("Delete Policy")
     @DeleteMapping("/deletePolicy")
     public String deletePolicy(@RequestBody ZkNode node){
-        // del policy need to update api
+        String path = node.getPath();
         try {
-            byte[] bytes = curatorClient.getData().forPath(ZKConstant.ZK_POLICY_PATH + node.getPath());
+            // 1. get old data
+            byte[] bytes = curatorClient.getData().forPath(ZKConstant.ZK_POLICY_PATH + path);
             PolicyNode policyNode = JSONObject.parseObject(new String(bytes), PolicyNode.class);
+
+            // 2. remove this policy from apis
             for (String api : policyNode.getApis()) {
                 byte[] bytes2 = curatorClient.getData().forPath(ZKConstant.ZK_API_PATH + api);
-                List<String> list = JSONObject.parseArray(new String(bytes2), String.class);
-                list.remove(node.getPath());
-                curatorClient.setData().forPath(ZKConstant.ZK_API_PATH + api,JSONObject.toJSONString(list).getBytes());
+                APINode apiNode = JSONObject.parseObject(new String(bytes2), APINode.class);
+                apiNode.getPolicys().remove(path);
+                curatorClient.setData().forPath(ZKConstant.ZK_API_PATH + api,JSONObject.toJSONString(apiNode).getBytes());
             }
+            // 3. remove this policy from group
+            for (String group : policyNode.getGroups()) {
+                byte[] bytes2 = curatorClient.getData().forPath(ZKConstant.ZK_GROUP_PATH + group);
+                GroupNode groupNode = JSONObject.parseObject(new String(bytes2), GroupNode.class);
+                groupNode.getPolicys().remove(path);
+                curatorClient.setData().forPath(ZKConstant.ZK_GROUP_PATH + group,JSONObject.toJSONString(groupNode).getBytes());
+            }
+            // 4. remove this policy from role
+            for (String role : policyNode.getRoles()) {
+                byte[] bytes2 = curatorClient.getData().forPath(ZKConstant.ZK_ROLE_PATH + role);
+                RoleNode roleNode = JSONObject.parseObject(new String(bytes2), RoleNode.class);
+                roleNode.getPolicys().remove(path);
+                curatorClient.setData().forPath(ZKConstant.ZK_ROLE_PATH + role,JSONObject.toJSONString(roleNode).getBytes());
+            }
+            // 5. delete this policy path
             curatorClient.delete().forPath(ZKConstant.ZK_POLICY_PATH+node.getPath());
         }catch (Exception e){
             e.printStackTrace();
@@ -714,19 +752,20 @@ public class CuratorController {
     @DeleteMapping("/deleteAPI")
     public String deleteAPI(@RequestBody ZkNode node){
         try {
-            // del api need to update policy
+            String path = node.getPath();
+            // 1. get old data
             byte[] bytes1 = curatorClient.getData().forPath(ZKConstant.ZK_API_PATH + node.getPath());
-            List<String> policys = JSONObject.parseArray(new String(bytes1), String.class);
-            if(policys != null){
-                for (String policy : policys) {
-                    byte[] bytes3 = curatorClient.getData().forPath(ZKConstant.ZK_POLICY_PATH + policy);
-                    PolicyNode policyNode1 = JSONObject.parseObject(new String(bytes3), PolicyNode.class);
-                    policyNode1.getApis().remove(node.getPath());
-                    curatorClient.setData().forPath(ZKConstant.ZK_POLICY_PATH + policy,JSONObject.toJSONString(policyNode1).getBytes());
-                }
-            }
+            APINode apiNode = JSONObject.parseObject(new String(bytes1), APINode.class);
 
-            curatorClient.delete().forPath(ZKConstant.ZK_API_PATH+node.getPath());
+            // 2. remove api from policys
+            for (String policy : apiNode.getPolicys()) {
+                byte[] bytes2 = curatorClient.getData().forPath(ZKConstant.ZK_POLICY_PATH + policy);
+                PolicyNode policyNode = JSONObject.parseObject(new String(bytes2), PolicyNode.class);
+                policyNode.getApis().remove(path);
+                curatorClient.setData().forPath(ZKConstant.ZK_POLICY_PATH + policy,JSONObject.toJSONString(policyNode).getBytes());
+            }
+            // 3. delete this api path
+            curatorClient.delete().forPath(ZKConstant.ZK_API_PATH+path);
         }catch (Exception e){
             e.printStackTrace();
             return e.getMessage();
@@ -738,7 +777,27 @@ public class CuratorController {
     @DeleteMapping("/deleteGroup")
     public String deleteGroup(@RequestBody ZkNode node){
         try {
-            curatorClient.delete().forPath(ZKConstant.ZK_GROUP_PATH+node.getPath());
+            String path = node.getPath();
+            // 1. get old data
+            byte[] bytes = curatorClient.getData().forPath(ZKConstant.ZK_GROUP_PATH + path);
+            GroupNode groupNode = JSONObject.parseObject(new String(bytes), GroupNode.class);
+            // 2. remove group from policys
+            for (String policy : groupNode.getPolicys()) {
+                byte[] bytes1 = curatorClient.getData().forPath(ZKConstant.ZK_POLICY_PATH + policy);
+                PolicyNode policyNode = JSONObject.parseObject(new String(bytes1), PolicyNode.class);
+                policyNode.getGroups().remove(path);
+                curatorClient.setData().forPath(ZKConstant.ZK_POLICY_PATH + policy,JSONObject.toJSONString(policyNode).getBytes());
+            }
+
+            // 3. remove group from users
+            for (String user : groupNode.getUsers()) {
+                byte[] bytes1 = curatorClient.getData().forPath(ZKConstant.ZK_USER_PATH + user);
+                UserNode userNode = JSONObject.parseObject(new String(bytes1), UserNode.class);
+                userNode.getGroups().remove(path);
+                curatorClient.setData().forPath(ZKConstant.ZK_USER_PATH + user,JSONObject.toJSONString(userNode).getBytes());
+            }
+            // 3. delete this  group path
+            curatorClient.delete().forPath(ZKConstant.ZK_GROUP_PATH+path);
         }catch (Exception e){
             e.printStackTrace();
             return e.getMessage();
@@ -749,7 +808,27 @@ public class CuratorController {
     @DeleteMapping("/deleteRole")
     public String deleteRole(@RequestBody ZkNode node){
         try {
-            curatorClient.delete().forPath(ZKConstant.ZK_ROLE_PATH+node.getPath());
+            String path = node.getPath();
+            // 1. get old data
+            byte[] bytes = curatorClient.getData().forPath(ZKConstant.ZK_ROLE_PATH + path);
+            RoleNode roleNode = JSONObject.parseObject(new String(bytes), RoleNode.class);
+            // 2. remove role from policys
+            for (String policy : roleNode.getPolicys()) {
+                byte[] bytes1 = curatorClient.getData().forPath(ZKConstant.ZK_POLICY_PATH + policy);
+                PolicyNode policyNode = JSONObject.parseObject(new String(bytes1), PolicyNode.class);
+                policyNode.getRoles().remove(path);
+                curatorClient.setData().forPath(ZKConstant.ZK_POLICY_PATH + policy,JSONObject.toJSONString(policyNode).getBytes());
+            }
+
+            // 3. remove role from users
+            for (String user : roleNode.getUsers()) {
+                byte[] bytes1 = curatorClient.getData().forPath(ZKConstant.ZK_USER_PATH + user);
+                UserNode userNode = JSONObject.parseObject(new String(bytes1), UserNode.class);
+                userNode.getRoles().remove(path);
+                curatorClient.setData().forPath(ZKConstant.ZK_USER_PATH + user,JSONObject.toJSONString(userNode).getBytes());
+            }
+            // 3. delete this  role path
+            curatorClient.delete().forPath(ZKConstant.ZK_ROLE_PATH+path);
         }catch (Exception e){
             e.printStackTrace();
             return e.getMessage();
@@ -761,25 +840,21 @@ public class CuratorController {
 
 
 
+
+
+
+
+
+
     @ApiOperation("Select Group Detail Info")
     @GetMapping("/select/group/{groupId}")
     public HashMap selectGroup(@PathVariable("groupId") String groupId) throws Exception {
         HashMap<String, Object> result = new HashMap<>();
         byte[] bytes = curatorClient.getData().forPath(ZKConstant.ZK_GROUP_PATH + "/" + groupId);
-        List<String> policys = JSONObject.parseArray(new String(bytes), String.class);
-        List<String> users = curatorClient.getChildren().forPath(ZKConstant.ZK_USER_PATH);
-        ArrayList<String> groupUsers = new ArrayList<>();
-        for (String user : users) {
-            String path = ZKConstant.ZK_USER_PATH+"/"+user;
-            byte[] bytes1 = curatorClient.getData().forPath(path);
-            UserNode userNode = JSON.parseObject(new String(bytes1), UserNode.class);
-            if (userNode.getGroups().contains("/"+groupId)){
-                groupUsers.add(user);
-            }
-        }
-        result.put("groupId",groupId);
-        result.put("policys",policys);
-        result.put("users",groupUsers);
+        GroupNode groupNode = JSONObject.parseObject(new String(bytes), GroupNode.class);
+        result.put("groupId",groupNode.getPath());
+        result.put("policys",groupNode.getPolicys());
+        result.put("users",groupNode.getUsers());
         return result;
 
     }
@@ -789,20 +864,10 @@ public class CuratorController {
     public HashMap selectRole(@PathVariable("roleId") String roleId) throws Exception {
         HashMap<String, Object> result = new HashMap<>();
         byte[] bytes = curatorClient.getData().forPath(ZKConstant.ZK_ROLE_PATH + "/" + roleId);
-        List<String> policys = JSONObject.parseArray(new String(bytes), String.class);
-        List<String> users = curatorClient.getChildren().forPath(ZKConstant.ZK_USER_PATH);
-        ArrayList<String> groupUsers = new ArrayList<>();
-        for (String user : users) {
-            String path = ZKConstant.ZK_USER_PATH+"/"+user;
-            byte[] bytes1 = curatorClient.getData().forPath(path);
-            UserNode userNode = JSON.parseObject(new String(bytes1), UserNode.class);
-            if (userNode.getRoles().contains("/"+roleId)){
-                groupUsers.add(user);
-            }
-        }
-        result.put("roleId",roleId);
-        result.put("policys",policys);
-        result.put("users",groupUsers);
+        RoleNode roleNode = JSONObject.parseObject(new String(bytes), RoleNode.class);
+        result.put("roleId",roleNode.getPath());
+        result.put("policys",roleNode.getPolicys());
+        result.put("users",roleNode.getUsers());
         return result;
 
     }
@@ -812,24 +877,20 @@ public class CuratorController {
         HashMap<String, Object> result = new HashMap<>();
         byte[] bytes = curatorClient.getData().forPath(ZKConstant.ZK_USER_PATH + "/" + userId);
         UserNode userNode = JSONObject.parseObject(new String(bytes), UserNode.class);
-        ArrayList<String> groups = userNode.getGroups();
-        ArrayList<String> roles = userNode.getRoles();
 
         HashSet<String> userPolicy = new HashSet<>();
+        for (String group : userNode.getGroups()) {
+            byte[] bytes1 = curatorClient.getData().forPath(ZKConstant.ZK_GROUP_PATH + "/" + group);
+            GroupNode groupNode = JSONObject.parseObject(new String(bytes1), GroupNode.class);
+            userPolicy.addAll(groupNode.getPolicys());
+        }
+        for (String role : userNode.getRoles()) {
+            byte[] bytes1 = curatorClient.getData().forPath(ZKConstant.ZK_ROLE_PATH + "/" + role);
+            RoleNode roleNode = JSONObject.parseObject(new String(bytes1), RoleNode.class);
+            userPolicy.addAll(roleNode.getPolicys());
+        }
 
         HashSet<String> userApi = new HashSet<>();
-
-        for (String group : groups) {
-            byte[] bytes2 = curatorClient.getData().forPath(ZKConstant.ZK_GROUP_PATH +  group);
-            List<String> groupPolicy = JSONObject.parseArray(new String(bytes2), String.class);
-            userPolicy.addAll(groupPolicy);
-        }
-        for (String role : roles) {
-            byte[] bytes3 = curatorClient.getData().forPath(ZKConstant.ZK_ROLE_PATH +  role);
-            List<String> rolePolicy = JSONObject.parseArray(new String(bytes3), String.class);
-            userPolicy.addAll(rolePolicy);
-        }
-
         for (String policy : userPolicy) {
             byte[] bytes3 = curatorClient.getData().forPath(ZKConstant.ZK_POLICY_PATH +  policy);
             PolicyNode policyNode = JSONObject.parseObject(new String(bytes3), PolicyNode.class);
@@ -838,8 +899,8 @@ public class CuratorController {
         }
 
         result.put("userId",userId);
-        result.put("groups",groups);
-        result.put("roles",roles);
+        result.put("groups",userNode.getGroups());
+        result.put("roles",userNode.getRoles());
         result.put("policys",userPolicy);
         result.put("apis",userApi);
         return result;
