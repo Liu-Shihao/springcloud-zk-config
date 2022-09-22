@@ -24,4 +24,7 @@ public class UserNode extends ZkNode {
     @ApiModelProperty("Group List")
     @NotNull(message = "groups not null")
     public ArrayList<String> groups;
+
+    @ApiModelProperty("Policy List")
+    public ArrayList<String> policys;
 }

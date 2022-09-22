@@ -16,9 +16,7 @@ import org.apache.zookeeper.data.Stat;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 
 @Component
 @Slf4j
@@ -39,68 +37,60 @@ public class ZookeeperWatches {
         this.client = client;
     }
 
-    List<String> nodes = Arrays.asList("/users", "/roles", "/groups", "/policys", "/apis");
+//    List<String> nodes = Arrays.asList("/users", "/roles", "/groups", "/policys", "/apis");
 
 
-    public void znodeWatcher() throws Exception {
+    public void znodeWatcher(String path) throws Exception {
+        NodeCache nodeCache = new NodeCache(client, path);
+        nodeCache.start();
+        nodeCache.getListenable().addListener(new NodeCacheListener() {
 
-        for (String path : nodes) {
-            NodeCache nodeCache = new NodeCache(client, path);
-            nodeCache.start();
-            nodeCache.getListenable().addListener(new NodeCacheListener() {
-
-                @Override
-                public void nodeChanged() throws Exception {
-                    log.info("=======Node Changed===========");
-                    String currentData = new String(nodeCache.getCurrentData().getData());
-                    nodeCache.getCurrentData().getStat();
-                    log.info("path:"+path);
-                    log.info("currentData:"+currentData);
-                }
-            });
-
-        }
+            @Override
+            public void nodeChanged() throws Exception {
+                log.info("=======Node Changed===========");
+                String currentData = new String(nodeCache.getCurrentData().getData());
+                nodeCache.getCurrentData().getStat();
+                log.info("path:"+path);
+                log.info("currentData:"+currentData);
+            }
+        });
         log.info("节点监听注册完成");
     }
 
-    public void znodeChildrenWatcher() throws Exception {
+    public void znodeChildrenWatcher(String path) throws Exception {
         String lock = "lock";
-        for (String path : nodes) {
-            PathChildrenCache pathChildrenCache = new PathChildrenCache(client, path,true);
-            pathChildrenCache.start();
-            pathChildrenCache.getListenable().addListener(new PathChildrenCacheListener() {
+        PathChildrenCache pathChildrenCache = new PathChildrenCache(client, path,true);
+        pathChildrenCache.start();
+        pathChildrenCache.getListenable().addListener(new PathChildrenCacheListener() {
 
-                @Override
-                public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception {
-                    synchronized (lock){
-                        PathChildrenCacheEvent.Type type = event.getType();
-                        String childrenData = new String(event.getData().getData());
-                        String childrenPath = event.getData().getPath();
-                        if (childrenPath.contains(ZKConstant.ZK_USER_PATH)){
-                            log.info("======= user zk node was "+type+" =======");
-                            buildUserCache(childrenPath,childrenData);
-                        }else if (childrenPath.contains(ZKConstant.ZK_ROLE_PATH)){
-                            log.info("======= role zk node was "+type+" =======");
-                        }else if (childrenPath.contains(ZKConstant.ZK_GROUP_PATH)){
-                            log.info("======= group zk node was "+type+" =======");
-                        }else if (childrenPath.contains(ZKConstant.ZK_POLICY_PATH)){
-                            log.info("======= policy zk node was "+type+" =======");
-                        }else if (childrenPath.contains(ZKConstant.ZK_API_PATH)){
-                            log.info("======= api zk node was "+type+" =======");
-                        }
-                        Stat childrenStat = event.getData().getStat();
-                        log.info("event type："+type);
-                        log.info("children path："+childrenPath);
-                        log.info("children data："+childrenData);
-                        log.info("children mate data："+childrenStat);
+            @Override
+            public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception {
+                synchronized (lock){
+                    PathChildrenCacheEvent.Type type = event.getType();
+                    String childrenData = new String(event.getData().getData());
+                    String childrenPath = event.getData().getPath();
+                    if (childrenPath.contains(ZKConstant.ZK_USER_PATH)){
+                        log.info("======= user zk node was "+type+" =======");
+                        buildUserCache(childrenPath,childrenData);
+                    }else if (childrenPath.contains(ZKConstant.ZK_ROLE_PATH)){
+                        log.info("======= role zk node was "+type+" =======");
+                    }else if (childrenPath.contains(ZKConstant.ZK_GROUP_PATH)){
+                        log.info("======= group zk node was "+type+" =======");
+                    }else if (childrenPath.contains(ZKConstant.ZK_POLICY_PATH)){
+                        log.info("======= policy zk node was "+type+" =======");
+                    }else if (childrenPath.contains(ZKConstant.ZK_API_PATH)){
+                        log.info("======= api zk node was "+type+" =======");
                     }
-
-
+                    Stat childrenStat = event.getData().getStat();
+                    log.info("event type："+type);
+                    log.info("children path："+childrenPath);
+                    log.info("children data："+childrenData);
+                    log.info("children mate data："+childrenStat);
                 }
-            });
-        }
 
 
+            }
+        });
         log.info("子节点监听注册完成");
     }
 
@@ -109,27 +99,29 @@ public class ZookeeperWatches {
 //        List<String> allUser = client.getChildren().forPath(ZKConstant.ZK_USER_PATH);
 //        for (String userPath : allUser) {
 //            byte[] bytes1 = client.getData().forPath(userPath);
-            UserNode userNode = JSONObject.parseObject(childrenData, UserNode.class);
-            ArrayList<String> userGroups = userNode.getGroups();
-            ArrayList<String> policys = new ArrayList<>();
-            for (String userGroup : userGroups) {
-                byte[] bytes2 = client.getData().forPath(ZKConstant.ZK_GROUP_PATH+userGroup);
-                GroupNode groupNode = JSONObject.parseObject(new String(bytes2), GroupNode.class);
-                policys.addAll(groupNode.getPolicys());
-            }
+        UserNode userNode = JSONObject.parseObject(childrenData, UserNode.class);
 
-            ArrayList<String> userRoles = userNode.getRoles();
-            for (String userRole : userRoles) {
-                byte[] bytes3 = client.getData().forPath(ZKConstant.ZK_ROLE_PATH+ userRole);
-                RoleNode roleNode = JSONObject.parseObject(new String(bytes3), RoleNode.class);
-                policys.addAll(roleNode.getPolicys());
-            }
+        ArrayList<String> userGroups = userNode.getGroups();
+        HashSet<String> policys = new HashSet<>();
+        policys.addAll(userNode.getPolicys());
+        for (String userGroup : userGroups) {
+            byte[] bytes2 = client.getData().forPath(ZKConstant.ZK_GROUP_PATH+userGroup);
+            GroupNode groupNode = JSONObject.parseObject(new String(bytes2), GroupNode.class);
+            policys.addAll(groupNode.getPolicys());
+        }
 
-            HashSet<String> apis = new HashSet<>();
-            for (String policy : policys) {
-                byte[] bytes4 = client.getData().forPath(ZKConstant.ZK_POLICY_PATH+policy);
-                PolicyNode policyNode = JSONObject.parseObject(new String(bytes4), PolicyNode.class);
-                apis.addAll(policyNode.getApis());
+        ArrayList<String> userRoles = userNode.getRoles();
+        for (String userRole : userRoles) {
+            byte[] bytes3 = client.getData().forPath(ZKConstant.ZK_ROLE_PATH+ userRole);
+            RoleNode roleNode = JSONObject.parseObject(new String(bytes3), RoleNode.class);
+            policys.addAll(roleNode.getPolicys());
+        }
+
+        HashSet<String> apis = new HashSet<>();
+        for (String policy : policys) {
+            byte[] bytes4 = client.getData().forPath(ZKConstant.ZK_POLICY_PATH+policy);
+            PolicyNode policyNode = JSONObject.parseObject(new String(bytes4), PolicyNode.class);
+            apis.addAll(policyNode.getApis());
 //            }
             log.info("cache user -> apis :  {} = {}",userNode.getPath(),apis);
 

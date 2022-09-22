@@ -1,6 +1,7 @@
 package com.lsh.auth.config;
 
 import com.lsh.auth.watch.ZookeeperWatches;
+import com.lsh.constant.ZKConstant;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
@@ -10,6 +11,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
+import java.util.List;
 
 
 @Slf4j
@@ -34,9 +38,26 @@ public class CuratorConfig {
         client.start();
         //注册监听器
         ZookeeperWatches watches = new ZookeeperWatches(client);
-        watches.znodeWatcher();
-        watches.znodeChildrenWatcher();
+        List<String> nodes = Arrays.asList(ZKConstant.ZK_USER_PATH, ZKConstant.ZK_ROLE_PATH, ZKConstant.ZK_GROUP_PATH, ZKConstant.ZK_API_PATH);
+        for (String path : nodes) {
+            watches.znodeWatcher(path);
+            watches.znodeChildrenWatcher(path);
+        }
+        policyChildrenWatcher(client, ZKConstant.ZK_POLICY_PATH,watches);
         return client;
     }
+    //recursion policy children node watcher
+    public void policyChildrenWatcher(CuratorFramework client,String path,ZookeeperWatches watches) throws Exception{
+        List<String> childrenPolicys = client.getChildren().forPath(path);
+        if (childrenPolicys == null || childrenPolicys.size() == 0){
+            return;
+        }
+        watches.znodeWatcher(path);
+        watches.znodeChildrenWatcher(path);
+        for (String childrenPolicy : childrenPolicys) {
+            policyChildrenWatcher(client,path+"/"+childrenPolicy,watches);
+        }
+    }
+
 
 }

@@ -167,6 +167,12 @@ public class CuratorController {
             String data = JSON.toJSONString(policyNode);
             log.info("===>{} : {}",path,data);
             curatorClient.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(ZKConstant.ZK_POLICY_PATH+path,data.getBytes());
+
+            //register watcher
+//            ZookeeperWatches watches = new ZookeeperWatches(curatorClient);
+//            watches.znodeWatcher(ZKConstant.ZK_POLICY_PATH+path);
+//            watches.znodeChildrenWatcher(ZKConstant.ZK_POLICY_PATH+path);
+
         }catch (Exception e){
             return e.getMessage();
         }
@@ -958,5 +964,27 @@ public class CuratorController {
         }
         return bool;
     }
+    @ApiOperation("Get Policy Node All Permission")
+    @GetMapping("/getPolicyPermission/{path}")
+    public String getPolicyPermission(@PathVariable("path")String path) throws Exception {
+        HashSet<String> ans = new HashSet<>();
+        findPolicyPermission(ZKConstant.ZK_POLICY_PATH+"/"+path,ans);
+        return ans.toString();
+    }
+
+    public void findPolicyPermission(String path ,HashSet<String> ans) throws Exception{
+
+        byte[] bytes = curatorClient.getData().forPath(path);
+        PolicyNode policyNode = JSONObject.parseObject(new String(bytes), PolicyNode.class);
+        ans.addAll(policyNode.getApis());
+        List<String> childrenPolicys = curatorClient.getChildren().forPath(path);
+        if (childrenPolicys == null || childrenPolicys.size() == 0){
+            return;
+        }
+        for (String childrenPolicy : childrenPolicys) {
+            findPolicyPermission(path+"/"+childrenPolicy,ans);
+        }
+    }
+
 
 }
