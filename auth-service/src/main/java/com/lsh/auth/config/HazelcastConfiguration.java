@@ -1,47 +1,44 @@
-//package com.lsh.auth.config;
-//
-//import com.hazelcast.client.HazelcastClient;
-//import com.hazelcast.client.config.ClientConfig;
-//import com.hazelcast.client.config.ClientNetworkConfig;
-//import com.hazelcast.core.HazelcastInstance;
-//import lombok.Data;
-//import org.springframework.boot.context.properties.ConfigurationProperties;
-//import org.springframework.context.annotation.Bean;
-//import org.springframework.context.annotation.Configuration;
-//
-///**
-// * @Author: LiuShihao
-// * @Date: 2022/8/22 23:01
-// * @Desc: 连接Hazelcast Cluster集群
-// */
-//@ConfigurationProperties(prefix = "hazelcast")
-//@Data
-//@Configuration
-//public class HazelcastConfiguration {
-//
-//    public String address;
-//
-//    @Bean
-//    public ClientConfig hazelCastConfig() {
-//        ClientConfig clientConfig = new ClientConfig();
-//        ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
-//        networkConfig.addAddress( address)
-//                .setSmartRouting(true)
-//                .addOutboundPortDefinition("34700-34710")
-//                .setRedoOperation(true)
-//                .setConnectionTimeout(5000);
-//        return clientConfig;
-//
-//    }
-//
-//    /**
-//     * @param config
-//     * @return
-//     */
-//    @Bean("hazelcastClient")
-//    public HazelcastInstance hazelcastInstance(ClientConfig config) {
-//        HazelcastInstance hazelcastInstance = HazelcastClient.newHazelcastClient(config);
-//        return hazelcastInstance;
-//    }
-//
-//}
+package com.lsh.auth.config;
+
+import com.hazelcast.config.*;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
+
+@Component
+@Configuration
+public class HazelcastConfiguration {
+
+    @Bean
+    public Config hazelCastConfig() {
+        Config config = new Config();
+        //解决同网段下，不同库项目
+        GroupConfig gc=new GroupConfig("hazelGroup");
+        config.setInstanceName("hazelcast-instance")
+                .addMapConfig(new MapConfig()
+                        .setName("configuration")
+                        // Map中存储条目的最大值[0~Integer.MAX_VALUE]。默认值为0。
+                        .setMaxSizeConfig(new MaxSizeConfig(200, MaxSizeConfig.MaxSizePolicy.FREE_HEAP_SIZE))
+                        //数据释放策略[NONE|LRU|LFU]。这是Map作为缓存的一个参数，用于指定数据的回收算法。默认为NONE。LRU：“最近最少使用“策略。
+                        .setEvictionPolicy(EvictionPolicy.LRU)
+                        //数据留存时间[0~Integer.MAX_VALUE]。缓存相关参数，单位秒，默认为0。
+                        .setTimeToLiveSeconds(-1))
+                .setGroupConfig(gc);
+        return config;
+    }
+
+    /**
+     * 添加Hazelcast监听器配置
+     * @param config
+     * @return
+     */
+    @Bean
+    public HazelcastInstance hazelcastInstance(Config config) {
+        HazelcastInstance hzInstance = Hazelcast.newHazelcastInstance(config);
+        System.out.println("load com.hazelcast.core.HazelcastInstance.....");
+        return hzInstance;
+    }
+
+}

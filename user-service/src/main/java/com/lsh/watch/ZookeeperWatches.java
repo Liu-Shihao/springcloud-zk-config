@@ -24,7 +24,7 @@ public class ZookeeperWatches {
             @Override
             public void nodeChanged() throws Exception {
                 System.out.println("=======节点改变===========");
-                String path = nodeCache.getPath();
+                String path = nodeCache.getCurrentData().getPath();
                 String currentDataPath = nodeCache.getCurrentData().getPath();
                 String currentData = new String(nodeCache.getCurrentData().getData());
                 Stat stat = nodeCache.getCurrentData().getStat();

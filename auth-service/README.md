@@ -1,13 +1,21 @@
 # API
 
-1. 创建User节点，检查group和role是否存在，更新group和role数据
-2. 创建Api节点，检查policy是否存在，更新policy节点数据
+1. 创建User节点，会更新role和group节点
+2. 创建Api节点，
 3. 创建Policy节点，检查api、group、role，更新api、group、role
 4. 创建Role节点，检查Policy、User，更新Policy、User
 5. 创建Group节点，检查Policy、User，更新Policy、User
 
 6. 更新User节点，检查group和role是否存在，更新相应的group和role数据：把新数据中没有的老数据删除该path，老数据中没有的新数据添加该path
 7. 更新
+
+
+# Cache 
+1. user 更新，重新构建user-api缓存即可
+2. role 更新，
+3. group 更新
+4. policy 更新
+5. api 更新
 
 
 # Swagger 配置
