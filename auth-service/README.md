@@ -1,3 +1,13 @@
+# 启动流程
+1. CuratorConfig：注入CuratorFramework（ZK客户端）
+2. HazelcastConfiguration：注入curatorClient，构建本地缓存到hazelcast中即可。
+3. ZookeeperWatchesConfig：注入curatorClient和hazelcastInstance，  向curatorClient中注册watcher，当zk节点有事件发生时，更新hazelcast缓存
+
+
+# 缓存
+
+
+
 # API
 
 1. 创建User节点，会更新role和group节点
