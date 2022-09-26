@@ -22,12 +22,10 @@ public class ZKConstant {
 
     public static final String ZK_USER_ROLE_PATH = "/role";
 
-    // Hazelcast 缓存信息
     public static final String CACHE_KEY = "users_info";
 
-    public static final String HAZELCAST_MAP = "hazelcast-map";
+    public static final String HAZELCAST_MAP = "hazelcast-cache";
 
-    // Guava 本地缓存信息
     public static final String LOCAL_CACHE_KEY = "local_users";
 
 

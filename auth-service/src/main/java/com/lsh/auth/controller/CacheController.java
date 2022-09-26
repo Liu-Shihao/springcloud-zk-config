@@ -23,14 +23,14 @@ public class CacheController {
 
     @GetMapping("/{user}")
     public Object getUserCache(@PathVariable("user") String user){
-        IMap<String, Object> localCache = hazelcastInstance.getMap("hazelcast-cache");
+        IMap<String, Object> localCache = hazelcastInstance.getMap(ZKConstant.HAZELCAST_MAP);
         return localCache.get("/"+user);
     }
 
 
     @GetMapping("/{id}/{path}")
     public Object getCache(@PathVariable("id") Integer id,@PathVariable("path") String path){
-        IMap<String, Object> localCache = hazelcastInstance.getMap("hazelcast-cache");
+        IMap<String, Object> localCache = hazelcastInstance.getMap(ZKConstant.HAZELCAST_MAP);
         switch (id){
             case 1:
                 return  localCache.get(ZKConstant.ZK_GROUP_PATH + "/" +path);

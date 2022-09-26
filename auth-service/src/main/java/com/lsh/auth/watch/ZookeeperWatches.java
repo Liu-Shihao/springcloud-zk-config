@@ -7,6 +7,7 @@ import com.lsh.auth.dto.zk.GroupNode;
 import com.lsh.auth.dto.zk.PolicyNode;
 import com.lsh.auth.dto.zk.RoleNode;
 import com.lsh.auth.dto.zk.UserNode;
+import com.lsh.auth.utils.BuildLocalCacheUtil;
 import com.lsh.constant.ZKConstant;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -14,8 +15,6 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.*;
 import org.apache.zookeeper.data.Stat;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 
 @Data
@@ -26,9 +25,13 @@ public class ZookeeperWatches {
 
     private CuratorFramework client;
 
+    BuildLocalCacheUtil buildLocalCacheUtil ;
+
+
     public ZookeeperWatches(CuratorFramework client,HazelcastInstance hazelcastInstance) {
         this.client = client;
         this.hazelcastInstance = hazelcastInstance;
+        this.buildLocalCacheUtil = new BuildLocalCacheUtil(hazelcastInstance,client);
     }
 
     public void znodeWatcher(String path) throws Exception {
@@ -45,7 +48,7 @@ public class ZookeeperWatches {
                 log.info("currentData:"+currentData);
             }
         });
-        log.info("节点监听注册完成");
+        log.info("node monitor registration completed");
     }
 
     public void znodeChildrenWatcher(String path) throws Exception {
@@ -60,88 +63,136 @@ public class ZookeeperWatches {
                     PathChildrenCacheEvent.Type type = event.getType();
                     String childrenData = new String(event.getData().getData());
                     String childrenPath = event.getData().getPath();
-                    if (childrenPath.contains(ZKConstant.ZK_USER_PATH)){
-                        log.info("======= user zk node was "+type+" =======");
-                        //rebuilder user local cache
-                        buildUserCache(childrenPath,childrenData);
-                    }else if (childrenPath.contains(ZKConstant.ZK_ROLE_PATH)){
-                        log.info("======= role zk node was "+type+" =======");
-                    }else if (childrenPath.contains(ZKConstant.ZK_GROUP_PATH)){
-                        log.info("======= group zk node was "+type+" =======");
-                    }else if (childrenPath.contains(ZKConstant.ZK_POLICY_PATH)){
-                        log.info("======= policy zk node was "+type+" =======");
-                        PolicyNode policyNode = JSONObject.parseObject(childrenData, PolicyNode.class);
-                        String[] split = childrenPath.split("/");
-                        int level = split.length-1;
-                        switch (type.toString()){
-                            case "CHILD_ADDED":
-                                log.info("Add policy node");
-                                break;
-                            case "CHILD_UPDATED":
-                                log.info("Update policy node");
-
-                                break;
-                            case "CHILD_REMOVED":
-                                log.info("Remove policy node");
-                                break;
-                            default:
-                                break;
-                        }
-
-                    }else if (childrenPath.contains(ZKConstant.ZK_API_PATH)){
-                        log.info("======= api zk node was "+type+" =======");
-                    }
                     Stat childrenStat = event.getData().getStat();
                     log.info("event type："+type);
                     log.info("children path："+childrenPath);
                     log.info("children data："+childrenData);
                     log.info("children mate data："+childrenStat);
+                    if (childrenPath.contains(ZKConstant.ZK_USER_PATH)){
+                        log.info("node type : User");
+                        //handle user node event
+                        handleUserEvent(type.toString(),childrenPath,childrenData);
+                    }else if (childrenPath.contains(ZKConstant.ZK_ROLE_PATH)){
+                        log.info("node type : ROLE");
+                        //handle role node event
+                        handleRoleEvent(type.toString(),childrenPath,childrenData);
+                    }else if (childrenPath.contains(ZKConstant.ZK_GROUP_PATH)){
+                        log.info("node type : GROUP");
+                        //handle group node event
+                        handleGroupEvent(type.toString(),childrenPath,childrenData);
+                    }else if (childrenPath.contains(ZKConstant.ZK_POLICY_PATH)){
+                        log.info("node type : POLICY");
+                        //handle policy node event
+                        handlePolicyEvent(type.toString(),childrenPath,childrenData);
+                    }else if (childrenPath.contains(ZKConstant.ZK_API_PATH)){
+                        log.info("node type : API");
+                    }
                 }
-
-
             }
         });
-        log.info("子节点监听注册完成");
+        log.info("children node monitor registration is complete");
+    }
+
+    public void handleGroupEvent(String eventType, String groupPath, String childrenData) {
+        GroupNode groupNode = JSONObject.parseObject(childrenData, GroupNode.class);
+        switch (eventType){
+            case "CHILD_ADDED":
+                //build group cache
+                buildLocalCacheUtil.buildGroupCache(groupNode);
+                break;
+            case "CHILD_UPDATED":
+                //rebuild group cache
+                buildLocalCacheUtil.buildGroupCache(groupNode);
+                break;
+            case "CHILD_REMOVED":
+                IMap<Object, Object> localCache = hazelcastInstance.getMap(ZKConstant.HAZELCAST_MAP);
+                localCache.remove(ZKConstant.ZK_GROUP_PATH+groupPath);
+                break;
+            default:
+                break;
+        }
+
     }
 
 
     /**
-     * rebuilder user local cache
-     * @param childrenPath
+     *
+     * @param eventType
+     * @param rolePath
      * @param childrenData
-     * @throws Exception
      */
-    public void buildUserCache(String childrenPath,String childrenData) throws Exception{
+    public void handleRoleEvent(String eventType, String rolePath, String childrenData) {
+        RoleNode roleNode = JSONObject.parseObject(childrenData, RoleNode.class);
+        switch (eventType){
+            case "CHILD_ADDED":
+                //build role cache
+                buildLocalCacheUtil.buildRoleCache(roleNode);
+                break;
+            case "CHILD_UPDATED":
+                //rebuild role cache
+                buildLocalCacheUtil.buildRoleCache(roleNode);
+                break;
+            case "CHILD_REMOVED":
+                IMap<Object, Object> localCache = hazelcastInstance.getMap(ZKConstant.HAZELCAST_MAP);
+                localCache.remove(ZKConstant.ZK_ROLE_PATH+rolePath);
+                break;
+            default:
+                break;
+        }
+
+    }
+
+
+
+    /**
+     * Handle the logic of updating the cache according to the different event types of the User Node
+     */
+    public void handleUserEvent(String eventType,String childrenPath,String childrenData){
         UserNode userNode = JSONObject.parseObject(childrenData, UserNode.class);
-
-        ArrayList<String> userGroups = userNode.getGroups();
-        HashSet<String> policys = new HashSet<>();
-        policys.addAll(userNode.getPolicys());
-        for (String userGroup : userGroups) {
-            byte[] bytes2 = client.getData().forPath(ZKConstant.ZK_GROUP_PATH+userGroup);
-            GroupNode groupNode = JSONObject.parseObject(new String(bytes2), GroupNode.class);
-            policys.addAll(groupNode.getPolicys());
-        }
-
-        ArrayList<String> userRoles = userNode.getRoles();
-        for (String userRole : userRoles) {
-            byte[] bytes3 = client.getData().forPath(ZKConstant.ZK_ROLE_PATH+ userRole);
-            RoleNode roleNode = JSONObject.parseObject(new String(bytes3), RoleNode.class);
-            policys.addAll(roleNode.getPolicys());
-        }
-
-        HashSet<String> apis = new HashSet<>();
-        for (String policy : policys) {
-            byte[] bytes4 = client.getData().forPath(ZKConstant.ZK_POLICY_PATH+policy);
-            PolicyNode policyNode = JSONObject.parseObject(new String(bytes4), PolicyNode.class);
-            apis.addAll(policyNode.getApis());
-            log.info("cache user -> apis :  {} = {}",userNode.getPath(),apis);
-
-            IMap<String, Object> localCache = hazelcastInstance.getMap("hazelcast-cache");
-            localCache.put(userNode.getPath(),apis);
+        switch (eventType){
+            case "CHILD_ADDED":
+                // add user node: build user cache
+                buildLocalCacheUtil.buildUserCache(userNode);
+                break;
+            case "CHILD_UPDATED":
+                //user node update:rebuild user cache
+                buildLocalCacheUtil.buildUserCache(userNode);
+                break;
+            case "CHILD_REMOVED":
+                //delete user node:remove user cache
+                IMap<Object, Object> localCache = hazelcastInstance.getMap(ZKConstant.HAZELCAST_MAP);
+                localCache.remove(ZKConstant.ZK_USER_PATH+childrenPath);
+                break;
+            default:
+                break;
         }
     }
 
+    /**
+     *
+     * @param eventType
+     * @param childrenPath
+     * @param childrenData
+     */
+    public void handlePolicyEvent(String eventType,String childrenPath,String childrenData){
+        PolicyNode policyNode = JSONObject.parseObject(childrenData, PolicyNode.class);
+        switch (eventType){
+            case "CHILD_ADDED":
+                //build policy cache
+                buildLocalCacheUtil.buildPolicyCache(policyNode);
+                break;
+            case "CHILD_UPDATED":
+                //rebuild policy cache
+                buildLocalCacheUtil.buildPolicyCache(policyNode);
+                break;
+            case "CHILD_REMOVED":
+                IMap<Object, Object> localCache = hazelcastInstance.getMap(ZKConstant.HAZELCAST_MAP);
+                localCache.remove(ZKConstant.ZK_POLICY_PATH+childrenPath);
+                break;
+            default:
+                break;
+        }
+    }
 
     /**
      * recursion policy children node watcher
@@ -163,8 +214,5 @@ public class ZookeeperWatches {
         }catch (Exception e){
             log.info(e.getMessage());
         }
-
     }
-
-
 }

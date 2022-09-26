@@ -4,10 +4,11 @@ import com.alibaba.fastjson.JSONObject;
 import com.hazelcast.config.*;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.lsh.auth.dto.zk.GroupNode;
+import com.lsh.auth.dto.zk.PolicyNode;
 import com.lsh.auth.dto.zk.RoleNode;
 import com.lsh.auth.dto.zk.UserNode;
+import com.lsh.auth.utils.BuildLocalCacheUtil;
 import com.lsh.constant.ZKConstant;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
@@ -47,61 +48,58 @@ public class HazelcastConfiguration {
      * @param config
      * @return
      */
-    @Bean
+    @Bean("hazelcastInstance")
     public HazelcastInstance hazelcastInstance(Config config) throws Exception {
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
         log.info("load com.hazelcast.core.HazelcastInstance.....");
         log.info("init local cache .....");
+        //build local Cache
+
         buildLocalCache(curatorClient,hazelcastInstance);
         return hazelcastInstance;
     }
 
-    // build local cache
+    /**
+     * build local cache
+     * user : apis/roles/groups
+     * role : users/policys
+     * group : users/policys
+     * policy : roles/groups
+     * @param client
+     * @throws Exception
+     */
     public void buildLocalCache(CuratorFramework client,HazelcastInstance hazelcastInstance) throws Exception{
+        BuildLocalCacheUtil buildLocalCacheUtil = new BuildLocalCacheUtil(hazelcastInstance,client);
         List<String> users = client.getChildren().forPath(ZKConstant.ZK_USER_PATH);
-        IMap<String, Object> localCache = hazelcastInstance.getMap("hazelcast-cache");
         for (String user : users) {
             byte[] bytes = client.getData().forPath(ZKConstant.ZK_USER_PATH + "/" + user);
             UserNode userNode = JSONObject.parseObject(new String(bytes), UserNode.class);
-            for (String policy : userNode.getPolicys()) {
-                localCache.put(ZKConstant.ZK_POLICY_PATH +policy,localCache.get(ZKConstant.ZK_POLICY_PATH +policy)+","+user);
-            }
-            for (String group : userNode.getGroups()) {
-                byte[] bytes1 = client.getData().forPath(ZKConstant.ZK_GROUP_PATH + group);
-                GroupNode groupNode = JSONObject.parseObject(new String(bytes1), GroupNode.class);
-                for (String policy : groupNode.getPolicys()) {
-//                    if (!localCache.get(ZKConstant.ZK_POLICY_PATH  +policy).toString().contains(user)){
-                    localCache.put(ZKConstant.ZK_POLICY_PATH  +policy,localCache.get(ZKConstant.ZK_POLICY_PATH +policy)+","+user);
-//                    }
-                }
-            }
-            for (String role : userNode.getRoles()) {
-                byte[] bytes2 = client.getData().forPath(ZKConstant.ZK_ROLE_PATH + role);
-                RoleNode roleNode = JSONObject.parseObject(new String(bytes2), RoleNode.class);
-                for (String policy : roleNode.getPolicys()) {
-//                    if (!localCache.get(ZKConstant.ZK_POLICY_PATH  +policy).toString().contains(user)){
-                    localCache.put(ZKConstant.ZK_POLICY_PATH  +policy,localCache.get(ZKConstant.ZK_POLICY_PATH  +policy)+","+user);
-//                    }
-                }
-            }
-        }
-        List<String> groups = client.getChildren().forPath(ZKConstant.ZK_GROUP_PATH);
-        for (String group : groups) {
-            byte[] bytes = client.getData().forPath(ZKConstant.ZK_GROUP_PATH + "/" + group);
-            GroupNode groupNode = JSONObject.parseObject(new String(bytes), GroupNode.class);
-            List<String> group_users = groupNode.getUsers();
-            localCache.put(ZKConstant.ZK_GROUP_PATH + "/" +group,group_users);
+            // build User Cache，user ： api、role、group
+            buildLocalCacheUtil.buildUserCache(userNode);
         }
 
         List<String> roles = client.getChildren().forPath(ZKConstant.ZK_ROLE_PATH);
         for (String role : roles) {
             byte[] bytes = client.getData().forPath(ZKConstant.ZK_ROLE_PATH + "/" + role);
             RoleNode roleNode = JSONObject.parseObject(new String(bytes), RoleNode.class);
-            List<String> role_users = roleNode.getUsers();
-            localCache.put(ZKConstant.ZK_ROLE_PATH + "/" +role,role_users);
+            // build Role Cache ,role:users/policy
+            buildLocalCacheUtil.buildRoleCache(roleNode);
+        }
+        List<String> groups = client.getChildren().forPath(ZKConstant.ZK_GROUP_PATH);
+        for (String group : groups) {
+            byte[] bytes = client.getData().forPath(ZKConstant.ZK_GROUP_PATH + "/" + group);
+            GroupNode groupNode = JSONObject.parseObject(new String(bytes), GroupNode.class);
+            // build Group Cache ,group:users/policy
+            buildLocalCacheUtil.buildGroupCache(groupNode);
+        }
+
+        List<String> policys = client.getChildren().forPath(ZKConstant.ZK_POLICY_PATH);
+        for (String policy : policys) {
+            byte[] bytes = client.getData().forPath(ZKConstant.ZK_POLICY_PATH + "/" + policy);
+            PolicyNode policyNode = JSONObject.parseObject(new String(bytes), PolicyNode.class);
+            // build Group Cache ,policy:role/group
+            buildLocalCacheUtil.buildPolicyCache(policyNode);
         }
     }
-
-
 
 }
