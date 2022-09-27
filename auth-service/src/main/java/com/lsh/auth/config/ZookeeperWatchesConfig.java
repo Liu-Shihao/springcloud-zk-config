@@ -29,7 +29,7 @@ public class ZookeeperWatchesConfig {
     public ZookeeperWatches zookeeperWatches(){
         ZookeeperWatches zookeeperWatches = new ZookeeperWatches(curatorClient,hazelcastInstance);
         //register listener
-        List<String> nodes = Arrays.asList(ZKConstant.ZK_USER_PATH, ZKConstant.ZK_ROLE_PATH, ZKConstant.ZK_GROUP_PATH, ZKConstant.ZK_API_PATH);
+        List<String> nodes = Arrays.asList(ZKConstant.ZK_USER_PATH, ZKConstant.ZK_ROLE_PATH, ZKConstant.ZK_GROUP_PATH, ZKConstant.ZK_API_PATH,ZKConstant.ZK_POLICY_PATH);
         for (String path : nodes) {
             try {
                 zookeeperWatches.znodeWatcher(path);
@@ -39,7 +39,12 @@ public class ZookeeperWatchesConfig {
             }
         }
         //recursion policy children node watcher
-        zookeeperWatches.policyChildrenWatcher(ZKConstant.ZK_POLICY_PATH, zookeeperWatches);
+        try {
+            zookeeperWatches.policyChildrenWatcher(ZKConstant.ZK_POLICY_PATH, zookeeperWatches);
+        }catch (Exception e){
+            log.error(e.getMessage());
+        }
+
 
         return zookeeperWatches;
     }

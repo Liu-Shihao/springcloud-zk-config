@@ -21,7 +21,7 @@ public class SwaggerConfig {
     @Bean
     public Docket api() {
         return new Docket(DocumentationType.SWAGGER_2)
-                .host("localhost:8004")//可不要
+                .host("localhost:8004")
                 .apiInfo(apiInfo())
                 .select()
                 .apis(RequestHandlerSelectors.basePackage("com.lsh.auth.controller"))
@@ -31,7 +31,7 @@ public class SwaggerConfig {
 
     private ApiInfo apiInfo() {
         return new ApiInfoBuilder()
-                .title("Auth-Info")//微服务名称
+                .title("Auth-Info")
                 .description("权限管理中心")
                 .version("1.0")
                 .build();

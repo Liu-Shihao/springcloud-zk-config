@@ -18,11 +18,8 @@ import java.util.Set;
 @Component
 public class MyWatch implements Watcher {
 
-
     @Autowired
     LoadingCache<String, Set<String>> localCache;
-
-
 
     @Override
     public void process(WatchedEvent event) {

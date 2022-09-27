@@ -50,13 +50,12 @@ public class HazelcastConfiguration {
      */
     @Bean("hazelcastInstance")
     public HazelcastInstance hazelcastInstance(Config config) throws Exception {
-        HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance hazelcast = Hazelcast.newHazelcastInstance(config);
         log.info("load com.hazelcast.core.HazelcastInstance.....");
-        log.info("init local cache .....");
+//        log.info("init local cache .....");
         //build local Cache
-
-        buildLocalCache(curatorClient,hazelcastInstance);
-        return hazelcastInstance;
+//        buildLocalCache(curatorClient,hazelcast);
+        return hazelcast;
     }
 
     /**
@@ -68,8 +67,8 @@ public class HazelcastConfiguration {
      * @param client
      * @throws Exception
      */
-    public void buildLocalCache(CuratorFramework client,HazelcastInstance hazelcastInstance) throws Exception{
-        BuildLocalCacheUtil buildLocalCacheUtil = new BuildLocalCacheUtil(hazelcastInstance,client);
+    public void buildLocalCache(CuratorFramework client,HazelcastInstance hazelcast) throws Exception{
+        BuildLocalCacheUtil buildLocalCacheUtil = new BuildLocalCacheUtil(hazelcast,client);
         List<String> users = client.getChildren().forPath(ZKConstant.ZK_USER_PATH);
         for (String user : users) {
             byte[] bytes = client.getData().forPath(ZKConstant.ZK_USER_PATH + "/" + user);

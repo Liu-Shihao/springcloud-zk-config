@@ -27,7 +27,6 @@ public class ZookeeperWatches {
 
     BuildLocalCacheUtil buildLocalCacheUtil ;
 
-
     public ZookeeperWatches(CuratorFramework client,HazelcastInstance hazelcastInstance) {
         this.client = client;
         this.hazelcastInstance = hazelcastInstance;
@@ -68,6 +67,7 @@ public class ZookeeperWatches {
                     log.info("children path："+childrenPath);
                     log.info("children data："+childrenData);
                     log.info("children mate data："+childrenStat);
+
                     if (childrenPath.contains(ZKConstant.ZK_USER_PATH)){
                         log.info("node type : User");
                         //handle user node event
@@ -106,7 +106,7 @@ public class ZookeeperWatches {
                 break;
             case "CHILD_REMOVED":
                 IMap<Object, Object> localCache = hazelcastInstance.getMap(ZKConstant.HAZELCAST_MAP);
-                localCache.remove(ZKConstant.ZK_GROUP_PATH+groupPath);
+                localCache.remove(groupPath);
                 break;
             default:
                 break;
@@ -134,7 +134,7 @@ public class ZookeeperWatches {
                 break;
             case "CHILD_REMOVED":
                 IMap<Object, Object> localCache = hazelcastInstance.getMap(ZKConstant.HAZELCAST_MAP);
-                localCache.remove(ZKConstant.ZK_ROLE_PATH+rolePath);
+                localCache.remove(rolePath);
                 break;
             default:
                 break;
@@ -161,7 +161,7 @@ public class ZookeeperWatches {
             case "CHILD_REMOVED":
                 //delete user node:remove user cache
                 IMap<Object, Object> localCache = hazelcastInstance.getMap(ZKConstant.HAZELCAST_MAP);
-                localCache.remove(ZKConstant.ZK_USER_PATH+childrenPath);
+                localCache.remove(childrenPath);
                 break;
             default:
                 break;
@@ -187,7 +187,7 @@ public class ZookeeperWatches {
                 break;
             case "CHILD_REMOVED":
                 IMap<Object, Object> localCache = hazelcastInstance.getMap(ZKConstant.HAZELCAST_MAP);
-                localCache.remove(ZKConstant.ZK_POLICY_PATH+childrenPath);
+                localCache.remove(childrenPath);
                 break;
             default:
                 break;

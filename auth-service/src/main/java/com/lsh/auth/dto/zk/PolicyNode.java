@@ -25,11 +25,7 @@ public class PolicyNode extends ZkNode {
     @ApiModelProperty("Group List")
     public ArrayList<String> groups;
 
-    @ApiModelProperty("Ancestors List")
-    public ArrayList<String> ancestors;
-
-    @ApiModelProperty("Childrens List")
-    public ArrayList<String> childrens;
-
+    @ApiModelProperty("User List")
+    public ArrayList<String> users;
 
 }

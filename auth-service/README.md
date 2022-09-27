@@ -4,14 +4,22 @@
 3. ZookeeperWatchesConfig：注入curatorClient和hazelcastInstance，  向curatorClient中注册watcher，user节点被构建到hazelcast缓存中；当zk节点有事件发生时，更新hazelcast缓存，
 
 
-# 缓存  String : Map
-1. user : apis/role/group   注册watcher时构建
-4. role : user/policy     
-5. group : user/policy
-6. policy : role/group
+# 缓存 
+缓存的构建全部在ZookeeperWatches：
+项目启动时，ZookeeperWatches会遍历所有节点，时间类型为add，此时可构建全量缓存
+ZookeeperWatches监听到节点有事件发生时，根据事件类型（增删改）相应的缓存更新逻辑
 
+TODO 2022年09月27日17:57:58
+1.更新policy 没有更新user缓存
+2.更新api，更新对应policy 没有更新user缓存
 
+zk节点存储结构：
+user <-> role/group <->  policy
 
+1. user --> apis/roles/groups
+4. role --> users/policys
+5. group --> users/policys
+6. policy --> roles/groups
 
 
 # API
@@ -24,14 +32,6 @@
 
 6. 更新User节点，检查group和role是否存在，更新相应的group和role数据：把新数据中没有的老数据删除该path，老数据中没有的新数据添加该path
 7. 更新
-
-
-# Cache 
-1. user 更新，重新构建user-api缓存即可
-2. role 更新，
-3. group 更新
-4. policy 更新
-5. api 更新
 
 
 # Swagger 配置
@@ -65,20 +65,6 @@ Curator引入Cache来实现对zookeeper服务端事务的监听。Cache是Curato
 
 
 
-user --> role、group  --> policy  <--> api
-
-反向索引表：
-policy --> user
-group --> user
-role --> user
-
-为什么需要维护反向索引表？
-因为zk存储的数据，只能从user到role、group、policy,而如果role、group、policy发生变动，需要更新缓存中user的权限，则只能遍历全量user查询发生变动的role、group、policy。
-
-user 更新：--> role、group  --> policy  <--> api
-policy更新：（需要查询使用当前policy的所有user），查询反向索引表，更新涉及的user
-role、group更新：需要查询所有拥有当前role的user（当前group的所有user），查询反向索引表，更新涉及的user
-api更新：不需要更新缓存，因为user的权限是基于policy的，只有policy发生变化时才需要更新缓存
 
 
 1. 创建user节点：检查是否存在对应的role、group节点，如果不存在，不能创建。

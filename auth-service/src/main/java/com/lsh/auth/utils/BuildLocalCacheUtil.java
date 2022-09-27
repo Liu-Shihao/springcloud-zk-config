@@ -10,27 +10,25 @@ import com.lsh.auth.dto.zk.UserNode;
 import com.lsh.constant.ZKConstant;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
-import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
 @Slf4j
-@Component
 public class BuildLocalCacheUtil {
 
     HazelcastInstance hazelcastInstance;
 
     CuratorFramework curatorClient;
 
-    public BuildLocalCacheUtil(HazelcastInstance hazelcastInstance, CuratorFramework curatorClient) {
+    public BuildLocalCacheUtil(@Qualifier("hazelcastInstance") HazelcastInstance hazelcastInstance, CuratorFramework curatorClient) {
         this.hazelcastInstance = hazelcastInstance;
         this.curatorClient = curatorClient;
     }
 
     /**
-     *
      * @param groupNode
      */
     public void buildGroupCache(GroupNode groupNode) {

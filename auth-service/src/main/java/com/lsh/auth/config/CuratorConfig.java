@@ -21,14 +21,13 @@ public class CuratorConfig {
 
     @Bean("curatorClient")
     public CuratorFramework curatorClient() throws Exception {
-        // baseSleepTimeMs:初始的sleep时间，用于计算之后的每次重试的sleep时间 ; maxRetries: 最大重试次数
         RetryPolicy retryPolicy  = new ExponentialBackoffRetry(1000,3);
         CuratorFramework client = CuratorFrameworkFactory.builder()
                 //连接地址  集群用,隔开
                 .connectString(address)
-                .connectionTimeoutMs(5000) //连接超时时间
-                .sessionTimeoutMs(3000)//会话超时时间
-                .retryPolicy(retryPolicy)//设置重试机制
+                .connectionTimeoutMs(50000)
+                .sessionTimeoutMs(30000)
+                .retryPolicy(retryPolicy)
                 .build();
         client.start();
         return client;
