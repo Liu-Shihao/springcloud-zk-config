@@ -3,7 +3,6 @@ package com.citi.zk.controller;
 import com.citi.zk.dto.zk.*;
 import com.citi.zk.service.CuratorService;
 import com.citi.zk.dto.ZkNode;
-import com.lsh.auth.dto.zk.*;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import lombok.extern.slf4j.Slf4j;

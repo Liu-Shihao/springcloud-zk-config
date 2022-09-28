@@ -5,7 +5,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.citi.zk.dto.zk.*;
 import com.citi.zk.service.CuratorService;
 import com.citi.zk.dto.ZkNode;
-import com.lsh.auth.dto.zk.*;
 import com.lsh.constant.ZKConstant;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;

@@ -8,11 +8,10 @@ import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.stereotype.Component;
 
 
 @Slf4j
-@Component
+//@Component
 @Configuration
 public class CuratorConfig {
 
