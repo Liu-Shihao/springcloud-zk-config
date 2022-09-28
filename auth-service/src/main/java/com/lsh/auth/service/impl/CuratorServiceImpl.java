@@ -443,6 +443,10 @@ public class CuratorServiceImpl implements CuratorService {
                 curatorClient.setData().forPath(ZKConstant.ZK_USER_PATH + newPolicyDataUser,JSONObject.toJSONString(userNode).getBytes());
             }
 
+            for (String newPolicyDataUser : newPolicyDataUsers) {
+                curatorClient.setData().forPath(ZKConstant.ZK_USER_PATH + newPolicyDataUser,curatorClient.getData().forPath(ZKConstant.ZK_USER_PATH + newPolicyDataUser));
+            }
+
             // save policy new data
             String data = JSON.toJSONString(policyNode);
             log.info("update policy node : {} = {}",ZKConstant.ZK_POLICY_PATH+path,data);
@@ -511,6 +515,10 @@ public class CuratorServiceImpl implements CuratorService {
                 userNode.getRoles().add(path);
                 curatorClient.setData().forPath(ZKConstant.ZK_USER_PATH+copy_new_user,JSONObject.toJSONString(userNode).getBytes());
             }
+            for (String new_user : new_users) {
+                curatorClient.setData().forPath(ZKConstant.ZK_USER_PATH+new_user,curatorClient.getData().forPath(ZKConstant.ZK_USER_PATH+new_user));
+            }
+
             String data = JSON.toJSONString(node);
             log.info("update role node : {} = {}",ZKConstant.ZK_ROLE_PATH+path,data);
             curatorClient.setData().forPath(ZKConstant.ZK_ROLE_PATH+path,data.getBytes());
@@ -580,6 +588,10 @@ public class CuratorServiceImpl implements CuratorService {
                 UserNode userNode = JSONObject.parseObject(new String(bytes1), UserNode.class);
                 userNode.getGroups().add(path);
                 curatorClient.setData().forPath(ZKConstant.ZK_USER_PATH+copy_new_user,JSONObject.toJSONString(userNode).getBytes());
+            }
+
+            for (String new_user : new_users) {
+                curatorClient.setData().forPath(ZKConstant.ZK_USER_PATH+new_user,curatorClient.getData().forPath(ZKConstant.ZK_USER_PATH+new_user));
             }
             String data = JSON.toJSONString(node);
             log.info("update group node : {} = {}",ZKConstant.ZK_GROUP_PATH+path,data);

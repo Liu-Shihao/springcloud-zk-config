@@ -9,9 +9,21 @@
 项目启动时，ZookeeperWatches会遍历所有节点，时间类型为add，此时可构建全量缓存
 ZookeeperWatches监听到节点有事件发生时，根据事件类型（增删改）相应的缓存更新逻辑
 
-TODO 2022年09月27日17:57:58
-1.更新policy 没有更新user缓存
-2.更新api，更新对应policy 没有更新user缓存
+✅
+- 更新user（policy、role、group），更新user cache   ✅
+- 更新 role 中的 policy ，更新user cache           ✅
+- 更新 role 中的 user ，更新user cache             ✅
+- 更新 group 中的 policy， 更新user cache          ✅
+- 更新 group 中的 user， 更新user cache            ✅
+- 更新 policy 中的 user ，更新user cache           ✅
+- 更新 policy 中的 role ，更新user cache,对当前policy无影响
+- 更新 policy 中的 group ，更新user cache,对当前policy无影响
+- 更新 policy 中的 api ，更新user cache   ✅
+- 更新 api 中的 policy ，更新user cache   ✅
+- 更新 user 中的 role 中的 policy 中的 api，是否更新user cache ✅
+- 删除 user 中的 role，是否更新user cache ✅
+- 删除 user 中的 role 中的 policy ，是否更新user cache ✅
+- 删除 user 中的 role 中的 policy 中的 api，是否更新user cache ✅
 
 zk节点存储结构：
 user <-> role/group <->  policy
