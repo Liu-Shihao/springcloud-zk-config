@@ -13,8 +13,6 @@ import java.util.List;
  */
 @SpringBootTest
 public class StringTest {
-
-
     @Test
     public void test(){
         String str = "/a/b/c";
